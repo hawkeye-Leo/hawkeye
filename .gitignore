@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 _publish_*.py
 creem-product-description.txt
+_upload_banner.py
+assets/_banner_snap.png
+assets/brand-banner@2x.png
+assets/brand-banner-2x.png

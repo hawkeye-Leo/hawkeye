@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1200px;
+      height: 80px;
+      background: #1c3324;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 1.1rem 1.25rem 0.35rem;
+      height: 80px;
+    }
+    .brand-mark {
+      width: 1.45rem;
+      height: 1.45rem;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .brand-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      color: #fff;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .brand-tagline {
+      font-weight: 400;
+      font-size: 0.92rem;
+      color: #b7cabb;
+      letter-spacing: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+    </svg>
+    <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research console</span></h1>
+  </div>
+</body>
+</html>
