@@ -5,4 +5,4 @@ Try Hawkeye Community first (free) to confirm driver setup on your machine. Lab 
 After purchase, your license key is delivered by email. Enter it in Hawkeye Lab Settings to activate on one machine. Cancel anytime from the Creem customer portal.
 
 Support: hawkeye18485@gmail.com
-Refund policy: https://hawkeye-leo.github.io/terms/
+Refund policy: https://hawkeye-leo.github.io/hawkeye/terms/

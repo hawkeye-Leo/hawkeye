@@ -1,26 +1,30 @@
-# Hawkeye — official website (GitHub Pages)
+# Hawkeye — official website
 
-**Live site:** [https://hawkeye-leo.github.io/](https://hawkeye-leo.github.io/)
+**Live site:** [https://hawkeye-leo.github.io/hawkeye/](https://hawkeye-leo.github.io/hawkeye/)
 
-| Edition | Page | Source |
-| --- | --- | --- |
-| **Hawkeye Community** (open source) | [/](https://hawkeye-leo.github.io/) | [hawkeye-community](https://github.com/hawkeye-Leo/hawkeye-community) |
-| **Hawkeye Lab** (subscription) | [/lab/](https://hawkeye-leo.github.io/lab/) | Commercial build |
+This repository hosts the **GitHub Pages site only**. It is **not** the product source code.
 
-Hawkeye is a **Windows kernel security research console** — live memory & process analysis, driver-assisted bench commands (`!probe`, `!etw`, …). Community is GPL; Lab adds automated detection and `!analyze` reports.
+| What | Where |
+| --- | --- |
+| **Official website** (you are here on Pages) | [hawkeye-leo.github.io/hawkeye/](https://hawkeye-leo.github.io/hawkeye/) |
+| **Hawkeye Community** — source & downloads | [hawkeye-community](https://github.com/hawkeye-Leo/hawkeye-community) |
+| **Hawkeye Lab** — subscription edition | [/hawkeye/lab/](https://hawkeye-leo.github.io/hawkeye/lab/) |
 
-This repository is **`hawkeye-Leo.github.io`** — static site only. It is **not** the product source code.
+Hawkeye is a **Windows kernel security research console** — live memory and process analysis, driver-backed commands (`!probe`, `!etw`, …). Community is open source (GPL); Lab adds automated detection and `!analyze` reports.
+
+## Site map
+
+- Community (home): `/`
+- Lab: `/lab/`
+- Privacy: `/privacy/`
+- Terms: `/terms/`
 
 ## Publish
 
-From this folder:
+Edit files in this folder, then push to `main` on **hawkeye-Leo/hawkeye**. GitHub Pages deploys to `https://hawkeye-leo.github.io/hawkeye/`.
 
 ```powershell
 git add -A
 git commit -m "Update site"
 git push origin main
 ```
-
-GitHub Pages builds automatically (user site → `hawkeye-leo.github.io`).
-
-Legacy project site `/hawkeye/` on repo `hawkeye-Leo/hawkeye` is retired; use the root URL above.

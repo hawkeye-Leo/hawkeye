@@ -35,7 +35,7 @@ def put(repo, path, local, message):
 
 
 ROOT = pathlib.Path(r"C:\Users\38105\hawkeye-pages")
-REPO = "hawkeye-Leo/hawkeye-Leo.github.io"
+REPO = "hawkeye-Leo/hawkeye"
 
 put(REPO, "terms/index.html", ROOT / "terms" / "index.html", "Terms: Community pre-check, refund policy, Lab driver parity.")
 put(REPO, "lab/early-access/index.html", ROOT / "lab" / "early-access" / "index.html", "Subscribe page: link Terms refund policy.")

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://hawkeye-leo.github.io/</loc>
+    <loc>https://hawkeye-leo.github.io/hawkeye/</loc>
   </url>
   <url>
-    <loc>https://hawkeye-leo.github.io/lab/</loc>
+    <loc>https://hawkeye-leo.github.io/hawkeye/lab/</loc>
   </url>
   <url>
-    <loc>https://hawkeye-leo.github.io/privacy/</loc>
+    <loc>https://hawkeye-leo.github.io/hawkeye/privacy/</loc>
   </url>
   <url>
-    <loc>https://hawkeye-leo.github.io/terms/</loc>
+    <loc>https://hawkeye-leo.github.io/hawkeye/terms/</loc>
   </url>
 </urlset>
