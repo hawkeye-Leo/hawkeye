@@ -1,3 +1,5 @@
 _legacy_redirect/
 __pycache__/
 *.pyc
+_publish_*.py
+creem-product-description.txt
