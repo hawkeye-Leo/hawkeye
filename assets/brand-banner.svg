@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="72" viewBox="0 0 840 72" role="img" aria-label="Hawkeye Research console">
+  <rect width="840" height="72" fill="#1c3324"/>
+  <g transform="translate(20, 20)" fill="#ffffff">
+    <path fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+  </g>
+  <text x="58" y="34" fill="#ffffff" font-family="Segoe UI, system-ui, sans-serif" font-size="22" font-weight="650">Hawkeye</text>
+  <text x="158" y="34" fill="#b7cabb" font-family="Segoe UI, system-ui, sans-serif" font-size="18" font-weight="400">Research console</text>
+  <text x="58" y="58" fill="#8fa892" font-family="Segoe UI, system-ui, sans-serif" font-size="13" font-weight="400">Windows kernel security · anti-cheat research</text>
+</svg>
