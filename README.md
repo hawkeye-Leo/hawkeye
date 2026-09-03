@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Windows kernel security research for anti-cheat &amp; live forensics.</strong><br>
-  Driver-backed console — memory-access detection, anti-screenshot simulation, automated threat modeling, and professional analysis reports.
+  Driver-backed console — memory-access detection solutions, anti-screenshot detection solutions, automated simulation and detection, and professional analysis reports.
 </p>
 
 <p align="center">
