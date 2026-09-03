@@ -1,0 +1,8 @@
+Hawkeye Lab is a monthly subscription for live Windows security research: automated high-risk detections, analyze workflows, and scored PDF/text reports on Windows 10/11 x64 (Administrator required).
+
+Try Hawkeye Community first (free) to confirm driver setup on your machine. Lab uses the same kernel driver. If Community shows Driver OK, Lab should run on the same system.
+
+After purchase, your license key is delivered by email. Enter it in Hawkeye Lab Settings to activate on one machine. Cancel anytime from the Creem customer portal.
+
+Support: hawkeye18485@gmail.com
+Refund policy: https://hawkeye-leo.github.io/terms/

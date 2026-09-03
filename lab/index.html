@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hawkeye Lab — Official Site | Kernel Detection &amp; Analysis</title>
+  <meta name="description" content="Official Hawkeye Lab page. Professional Windows kernel research console with automated high-risk detection, !analyze workflow, and scored reports. Built on Hawkeye Community. $35/month.">
+  <meta name="keywords" content="Hawkeye Lab, Hawkeye Community, Windows kernel security, anti-cheat research, memory forensics, behavior detection, kernel driver analysis">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/lab/">
+  <meta property="og:title" content="Hawkeye Lab — Official Site">
+  <meta property="og:description" content="Kernel research console with automated detection and analysis reports. Subscription edition of Hawkeye Community.">
+  <meta property="og:url" content="https://hawkeye-leo.github.io/lab/">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="../site.css?v=20260903">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research console</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Edition">
+        <a href="../">Community</a>
+        <a class="active" href="./">Lab</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker">Hawkeye Lab</p>
+    <h2>Research, a professional productivity tool</h2>
+    <p class="lead">
+      Hawkeye Lab is a professional productivity tool built on a body of research.
+      It automates high-risk behavior detection, produces an analysis
+      report, and draws on a behavior-signature library so everything is
+      easier.
+    </p>
+    <p class="lead-note">
+      The <strong>behavior-signature library</strong> is what shapes each analysis
+      report: the detection dimensions Lab runs, and the Assessment text after
+      each dimension &mdash; what the finding means and how to read it.
+    </p>
+    <p class="lead-note">
+      <strong>Host-native kernel driver</strong> &mdash; live detections without
+      VT-based or VM-layer introspection.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="early-access/">Subscribe</a>
+      <a class="btn btn-ghost" href="../">Open Community</a>
+    </div>
+
+    <p class="note">
+      <strong>$35 / month</strong> (paid subscriptions opening soon). Lab includes everything in Community.
+      We recommend
+      <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">trying Community first</a>
+      to confirm driver setup on your machine. The cards below are what Lab adds &mdash;
+      high-risk detection, <code>!analyze</code>, and scored reports on the Community bench.
+    </p>
+
+    <section class="card edition-compare" aria-label="Community and Lab">
+      <h3>Community and Lab</h3>
+      <table class="edition-compare-table">
+        <thead>
+          <tr>
+            <th scope="col">Capability</th>
+            <th scope="col" class="col-yes">Community</th>
+            <th scope="col" class="col-yes">Lab</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Live console + driver setup</th>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>!probe</code>, <code>!etw</code>, memory tools</th>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">High-risk detection commands</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>!analyze</code> (20-check workflow)</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">Scored analysis report (PDF / text)</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">Lab <code>-demo</code> staging</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="edition-compare-foot">
+        Community: GPL-3.0-or-later &middot; Lab: subscription ($35 / month).
+      </p>
+    </section>
+
+    <div class="grid two">
+      <article class="card">
+        <h3><a href="../#probe"><code>!probe</code></a></h3>
+        <p>A live symbol context. Attach, then search names together.</p>
+      </article>
+      <article class="card">
+        <h3><a href="../#etw"><code>!etw</code></a></h3>
+        <p>Where the CPU ran in a short window. Process, thread, or the whole system.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#cross-rw"><code>!cross_rw</code></a></h3>
+        <p>In a short window, samples system-wide threads for cross-process read or write against a target. A game, or any process you are looking at. <code>!cross_rw_sim</code> stages a case.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#phys-read"><code>!phys_read</code></a></h3>
+        <p>Detects physical-memory reads via <code>MmCopyMemory</code> (<code>MM_COPY_MEMORY_PHYSICAL</code>). <code>!phys_read_sim</code> stages a case.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#map-io"><code>!map_io</code></a></h3>
+        <p>Detects kernel mapping of a process address via <code>MmMapIoSpace</code> &mdash; <code>MmNonCached</code> and <code>MmCached</code>. <code>!map_io_sim</code> stages both modes.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#active-pages"><code>!active_pages</code></a></h3>
+        <p>In a short window, records active pages in the target process virtual address space &mdash; RWX or RX. User-mode or kernel. <code>!active_pages_sim</code> stages both.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#hidden-windows"><code>!hidden_windows</code></a></h3>
+        <p>Detects windows hidden on the DisplayAffinity path &mdash; <code>SetWindowDisplayAffinity</code> or <code>win32kfull!ChangeWindowTreeProtection</code>. <code>!hidden_windows_sim</code> hides Hawkeye's own main window.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#hidden-visuals"><code>!hidden_visuals</code></a></h3>
+        <p>Detects Visuals hidden from capture &mdash; in-process or cross-process, and bindable to another process's window. <code>!hidden_visuals_sim</code> stages a local Visual.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#ukexec"><code>!ukexec</code></a></h3>
+        <p>Detects executable pages in the kernel region of a process address space that remain user-accessible &mdash; a newer injection technique. <code>!ukexec_sim</code> stages a case.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#hidden-process"><code>!hidden_process</code></a></h3>
+        <p>Detects processes and threads that are running but missing from the lists the system reports. <code>!hidden_process -run</code>.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#analyze"><code>!analyze</code></a></h3>
+        <p>Use a plugin you write to gather clues automatically, or enter the target PID and sensitive addresses yourself. Hawkeye takes those clues, runs detection, and writes a report.</p>
+      </article>
+      <article class="card">
+        <h3><a href="#invlpg">INVLPG / special instructions</a></h3>
+        <p>
+          Built on <code>!active_pages</code>: automatic instruction recognition on active memory.
+          Covers INVLPG, special instructions, virtualization-related opcodes, and the like.
+        </p>
+      </article>
+    </div>
+
+    <section>
+      <h3>Illustrated guide</h3>
+      <p>
+        Detection and <code>!analyze</code> walkthroughs are on this page.
+        Lab includes every Community command too &mdash; see the Community tab
+        for <code>!probe</code>, <code>!etw</code>, Memory, and driver setup.
+        Run <code>!help</code> for the full catalog; run any command with no
+        arguments for usage.
+      </p>
+      <nav class="guide-nav guide-nav--split-8" id="guide-toc" aria-label="Guide contents">
+        <strong>On this page</strong>
+        <ol>
+          <li><a href="#plugin">Clues &mdash; the plugin</a></li>
+          <li><a href="#complete-run">A complete run</a></li>
+          <li><a href="#same-setup">Same setup as Community</a></li>
+          <li><a href="../#probe"><code>!probe</code><span class="guide-toc-note">Community</span></a></li>
+          <li><a href="../#etw"><code>!etw</code><span class="guide-toc-note">Community</span></a></li>
+          <li><a href="#cross-rw"><code>!cross_rw</code></a></li>
+          <li><a href="#phys-read"><code>!phys_read</code></a></li>
+          <li><a href="#map-io"><code>!map_io</code></a></li>
+          <li><a href="#active-pages"><code>!active_pages</code></a></li>
+          <li><a href="#hidden-windows"><code>!hidden_windows</code></a></li>
+          <li><a href="#hidden-visuals"><code>!hidden_visuals</code></a></li>
+          <li><a href="#ukexec"><code>!ukexec</code></a></li>
+          <li><a href="#hidden-process"><code>!hidden_process</code></a></li>
+          <li><a href="#invlpg">INVLPG / specials</a></li>
+          <li><a href="#analyze"><code>!analyze</code></a></li>
+        </ol>
+      </nav>
+      <article class="guide-step" id="plugin">
+        <strong>1. Clues — the plugin</strong>
+        <p>
+          <code>!analyze</code> does not guess the target. It needs clues:
+          which process, and which addresses in that process you treat as
+          high-risk.
+        </p>
+        <p>
+          Lab ships <code>HawkHotTargets.dll</code> (under
+          <code>plugins\</code>). The built-in plugin stages a detection
+          target: it opens Notepad titled
+          <strong>Hawkeye Lab target -- do not close</strong>,
+          then hands Hawkeye that PID and two fixed addresses &mdash;
+          the PE header of <code>notepad.exe</code>, and the PE header of
+          <code>ntdll.dll</code> in that process.
+        </p>
+        <p>
+          You can replace it with your own plugin. The sample is
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community/tree/main/samples/HawkHotTargets"><code>samples\HawkHotTargets</code></a>
+          in the Community repo.
+          A game security engineer, for example, writes the code that
+          tells Hawkeye the game process PID and the sensitive addresses
+          in that process's memory. Hawkeye takes those clues and runs
+          automated detection for suspicious behavior.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="complete-run">
+        <strong>2. A complete run</strong>
+        <p>
+          Community is the research console. Lab is the same foundation,
+          already set up as a working case. The plugin in step 1 supplies
+          the clues. One built-in run simulates the behavior, detects it,
+          and writes an analysis report &mdash; that is how a newcomer first sees
+          what Lab can do.
+        </p>
+        <p>
+          Before you run this on your machine, follow
+          <a href="../#driver-setup">Community Driver setup</a>
+          and make sure the status bar reads <strong>Driver OK</strong>.
+          Type <code>!analyze -load -run -demo</code>.
+          The demo uses Notepad as the target. Lab stages high-risk behavior
+          against it &mdash; a cross-process read, a planted page, and the rest of
+          that run &mdash; a close simulation of a live system.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-getting-started.png" alt="Hawkeye Lab Getting started: behavior-first, and !analyze -load -run -demo.">
+          <figcaption>Figure 1. Getting started &mdash; the command for that run.</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../guide/lab-analyze-demo-1.png" alt="Hawkeye Lab !analyze demo: Notepad as the target, simulation then detection.">
+          <figcaption>Figure 2. The same run on Notepad &mdash; simulation, then detection.</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../guide/lab-analyze-demo-2.png" alt="Hawkeye Lab !analyze demo later in the same run: more staged cases and detection.">
+          <figcaption>Figure 3. Still the same run.</figcaption>
+        </figure>
+        <p>
+          When that run finishes, Lab writes a PDF. ANALYSIS comes first;
+          DETECTION is the evidence appendix. The cover is marked DEMO or LIVE.
+        </p>
+        <div class="report-offer" id="analysis-report">
+          <div>
+            <span class="mode-pill">DEMO</span>
+            <div class="report-title">Hawkeye Lab analysis report</div>
+            <p class="report-sub">This sample is from the Notepad run above. Lab staged the scene &mdash; not a live incident.</p>
+          </div>
+          <a class="btn btn-primary" href="../guide/hawkeye-lab-analyze-demo.pdf" target="_blank" rel="noopener">View sample report</a>
+        </div>
+        <div class="report-offer">
+          <div>
+            <span class="mode-pill-live">LIVE</span>
+            <div class="report-title">Hawkeye Lab analysis report</div>
+            <p class="report-sub">From a <code>-live</code> run &mdash; detection only, no simulation. Same layout; cover marked LIVE.</p>
+          </div>
+          <a class="btn btn-primary" href="../guide/hawkeye-lab-analyze-live.pdf" target="_blank" rel="noopener">View LIVE sample</a>
+        </div>
+        <p>
+          On your machine the file is saved under <code>reports\</code>.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="same-setup">
+        <strong>3. Same setup as Community</strong>
+        <p>
+          Lab uses the same host environment as Community: test signing,
+          an Administrator console, and a loaded driver.
+          See <a href="../#driver-setup">Community Driver setup</a>
+          and confirm <strong>Driver OK</strong> on the status bar before
+          any Lab detection or <code>!analyze</code> run.
+        </p>
+        <p>
+          Those steps are documented once &mdash; on the Community page.
+          When the driver is loaded, start the Lab edition.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="probe">
+        <strong>4. <code>!probe</code> — the entry</strong>
+        <p>
+          Lab ships the same bench as Community. Symbol context starts with
+          <code>!probe</code> &mdash; attach to a process or the kernel, then
+          search many names together.
+        </p>
+        <p>
+          The illustrated walkthrough is on the Community page:
+          <a href="../#probe">step 2 — <code>!probe</code></a>.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="etw">
+        <strong>5. <code>!etw</code> — who actually ran</strong>
+        <p>
+          <code>!etw</code> samples which instruction pointers ran in a short
+          window &mdash; process, thread, or the whole system. Lab pairs it with
+          active-page and instruction-decode work (step 14).
+        </p>
+        <p>
+          See the Community walkthrough:
+          <a href="../#etw">step 3 — <code>!etw</code></a>.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="cross-rw">
+        <strong>6. <code>!cross_rw</code> — who else is reading this process</strong>
+        <p>
+          <code>!cross_rw</code> watches a target PID for cross-process access
+          &mdash; <code>ReadProcessMemory</code> and the like. The window is
+          short. The scan is threads currently on the CPU, across the system;
+          then it reports who was in that process.
+        </p>
+        <p>
+          That is a bench question, not a verdict. It shows up around a game
+          process, a build you are testing, or any software you run: is
+          something else reading it.
+        </p>
+        <p>
+          <code>!cross_rw_sim</code> stages that access on a background thread
+          so you can see the detector fire. Run either command with no
+          arguments for usage. Pair them on the same PID;
+          <code>!cross_rw_sim -stop</code> ends the sim.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-cross-rw-usage.png" alt="Hawkeye Lab: !cross_rw and !cross_rw_sim usage in the console.">
+          <figcaption>Figure 6. Usage &mdash; pair the detector with the sim on the same PID.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="phys-read">
+        <strong>7. <code>!phys_read</code> — physical-memory reads</strong>
+        <p>
+          Cross-process access is not one technique.
+          <code>!cross_rw</code> covers attach-based reads such as
+          <code>ReadProcessMemory</code>.
+          <code>!phys_read</code> covers another:
+          <code>MmCopyMemory</code> with <code>MM_COPY_MEMORY_PHYSICAL</code>
+          &mdash; a physical-memory read of a process address.
+        </p>
+        <p>
+          <code>-pid</code> is the process being read.
+          <code>-va</code> is the virtual address inside it.
+          Both sides of the pair take the same two flags.
+        </p>
+        <p>
+          <code>!phys_read_sim</code> stages the same
+          <code>MmCopyMemory</code> (<code>MM_COPY_MEMORY_PHYSICAL</code>)
+          read so you can see the detector fire. Run either command with
+          no arguments for usage. Pair them on the same PID and VA.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-phys-read-usage.png" alt="Hawkeye Lab: !phys_read and !phys_read_sim usage in the console.">
+          <figcaption>Figure 7. Usage &mdash; same <code>-pid</code> and <code>-va</code> on both commands.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="map-io">
+        <strong>8. <code>!map_io</code> — MmMapIoSpace mapping</strong>
+        <p>
+          Physical-memory access is not one technique either.
+          <code>!phys_read</code> covers <code>MmCopyMemory</code>
+          (<code>MM_COPY_MEMORY_PHYSICAL</code>).
+          <code>!map_io</code> covers another:
+          a kernel map of a process address through
+          <code>MmMapIoSpace</code>.
+        </p>
+        <p>
+          Two cache modes. <code>-cache:0</code> is
+          <code>MmNonCached</code>. <code>-cache:1</code> is
+          <code>MmCached</code>.
+          <code>-pid</code> is the process being mapped.
+          <code>-va</code> is the virtual address inside it.
+          Both sides of the pair take the same three flags.
+        </p>
+        <p>
+          Detection is probabilistic; default is a short scan,
+          <code>-strong</code> widens it. Run more than once to confirm.
+          <code>!map_io_sim</code> stages each mode: map, then unmap,
+          no read. Run either command with no arguments for usage.
+          Pair them on the same PID, VA, and cache.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-map-io-usage.png" alt="Hawkeye Lab: !map_io and !map_io_sim usage in the console.">
+          <figcaption>Figure 8. Usage &mdash; same <code>-pid</code>, <code>-va</code>, and <code>-cache</code> on both commands.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="active-pages">
+        <strong>9. <code>!active_pages</code> — active pages in the target process virtual address space</strong>
+        <p>
+          Finding the code body of malware, or of software that should not
+          be there, is slow if you walk the address space by hand.
+          <code>!active_pages</code> samples a very short window and
+          records the pages that were active in that process virtual
+          address space.
+        </p>
+        <p>
+          <code>-pid</code> is the target. <code>-pid:4</code> is the
+          kernel. <code>-rx:0</code> is RWX pages.
+          <code>-rx:1</code> is RX pages.
+          <code>-pid:all</code> walks busy processes for RWX (not PID 4);
+          capture costs more CPU. User-mode hits can be checked against
+          VAD protection.
+        </p>
+        <p>
+          <code>!active_pages_sim</code> stages an active page in
+          user-mode (<code>-pid</code> above 4) or in the kernel
+          (<code>-pid:4</code>). One sim at a time;
+          <code>-stop</code> when you are done. Pair the detector on the
+          same PID with <code>-rx:</code>. Run either command with no
+          arguments for usage.
+        </p>
+        <p>
+          <code>-lab_miflag36</code> is experimental: Windows 11
+          <code>MiFlags</code> research. It is not part of the detector.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-active-pages-usage.png" alt="Hawkeye Lab: !active_pages and !active_pages_sim usage in the console.">
+          <figcaption>Figure 9. Usage &mdash; user-mode or kernel; pair the detector on the same PID with <code>-rx:</code>.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="hidden-windows">
+        <strong>10. <code>!hidden_windows</code> — DisplayAffinity hidden windows</strong>
+        <p>
+          Some windows are kept out of capture along the DisplayAffinity
+          path: <code>SetWindowDisplayAffinity</code>, or
+          <code>win32kfull!ChangeWindowTreeProtection</code>.
+          <code>!hidden_windows</code> detects that behavior.
+        </p>
+        <p>
+          Detection needs <code>-init</code> first, once.
+          After that, <code>!hidden_windows</code> with no flags runs the
+          scan. Run with no arguments before <code>-init</code> for usage.
+        </p>
+        <p>
+          <code>!hidden_windows_sim</code> hides Hawkeye's own main window
+          so you can see the same class of behavior.
+          <code>-enable:1</code> hides it from capture;
+          <code>-enable:0</code> shows it again.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-hidden-windows-usage.png" alt="Hawkeye Lab: !hidden_windows and !hidden_windows_sim usage in the console.">
+          <figcaption>Figure 10. Usage &mdash; <code>-init</code> then detect; the sim hides Hawkeye's main window.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="hidden-visuals">
+        <strong>11. <code>!hidden_visuals</code> — Visuals hidden from capture</strong>
+        <p>
+          Hiding a window (DisplayAffinity) is one technique.
+          Hiding a Visual is another: fuse a Visual in-process or
+          across processes, keep it out of capture, and bind it to any
+          process window.
+        </p>
+        <p>
+          <code>!hidden_visuals</code> detects Visuals that are hidden
+          from capture. It needs <code>dwmcore.dll</code> symbols; if they
+          are missing, the console gives the <code>!sym</code> line.
+        </p>
+        <p>
+          <code>!hidden_visuals_sim</code> creates a Visual locally
+          (a red overlay) and hides it from capture.
+          <code>-enable:1</code> stages it;
+          <code>-enable:0</code> restores.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-hidden-visuals-usage.png" alt="Hawkeye Lab: !hidden_visuals and !hidden_visuals_sim in the console.">
+          <figcaption>Figure 11. Usage &mdash; load <code>dwmcore</code> symbols if asked; sim <code>-enable:1</code> / <code>-enable:0</code>.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="ukexec">
+        <strong>12. <code>!ukexec</code> — user-accessible pages in the kernel region</strong>
+        <p>
+          Classic injection sits in user-mode mappings. A newer technique
+          places executable code in the kernel region of the target
+          process's address space, still reachable from user mode.
+          Ordinary user-mode injection checks do not cover that region.
+          <code>!ukexec</code> scans for those pages.
+        </p>
+        <p>
+          <code>-pid</code> scans one process.
+          <code>-busy</code> scans busy processes (higher CPU at capture).
+          Use one of these, not both.
+        </p>
+        <p>
+          <code>!ukexec_sim</code> plants one user-accessible page in that
+          kernel region for a user-mode PID (not PID 4). One sim at a
+          time; <code>-stop</code> when you are done, or when the process
+          exits. Run either command with no arguments for usage.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-ukexec-usage.png" alt="Hawkeye Lab: !ukexec and !ukexec_sim usage in the console.">
+          <figcaption>Figure 12. Usage &mdash; <code>-busy</code> or <code>-pid</code>; sim takes a user-mode PID.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="hidden-process">
+        <strong>13. <code>!hidden_process</code> — hidden processes and threads</strong>
+        <p>
+          Malware that injects into a legitimate process often starts a
+          thread there, then hides that process or thread so the usual
+          lists do not show it.
+          <code>!hidden_process</code> looks for that: what is running,
+          compared with what the system reports.
+        </p>
+        <p>
+          The scan is system-wide. <code>-run</code> starts it.
+          Run with no arguments for usage. There is no simulator for
+          this command.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-hidden-process-usage.png" alt="Hawkeye Lab: !hidden_process usage in the console.">
+          <figcaption>Figure 13. Usage &mdash; <code>!hidden_process -run</code>.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="invlpg">
+        <strong>14. INVLPG / special instructions</strong>
+        <p>
+          Much modern malware reaches another process's memory through
+          PTE remap paired with <code>INVLPG</code>, not only through
+          familiar cross-process APIs. That makes instruction recognition
+          on the pages that actually ran more important, not less.
+        </p>
+        <p>
+          Hawkeye decodes active memory and ETW RIP samples into an
+          instruction report: counts for <code>invlpg</code>,
+          virtualization opcodes, control-register moves, MSRs, and
+          related classes, with a risk line when a pattern stands out.
+          Pair it with <code>!active_pages</code> to find hot pages and
+          with <a href="../#etw"><code>!etw</code></a> to see where the CPU
+          ran in a short window.
+          Together they narrow a large address space down to a few
+          high-risk code pages quickly.
+        </p>
+        <p>
+          Lab can stage a kernel page full of synthetic high-risk
+          instructions. Run <code>!active_pages_sim -run -pid:4</code>,
+          then detect with <code>!active_pages -pid:4 -rx:0</code>.
+          Open the page in the Memory viewer &mdash; see
+          <a href="../#memory">Community Memory</a> for
+          <strong>ReadMemory</strong> and the console stats line.
+          Lab also lets you edit bytes at a chosen VA in that viewer
+          (hex edit after read) when you need to patch test data by hand.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-invlpg-report.png" alt="Hawkeye Lab: instruction decode report on a simulated high-risk kernel page with INVLPG flagged HIGH.">
+          <figcaption>Figure 14. A staged kernel code page &mdash; instruction decode with <code>[risk] HIGH</code> on <code>invlpg</code>.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="analyze">
+        <strong>15. <code>!analyze</code> — automated detection and report</strong>
+        <p>
+          <code>!analyze</code> runs automated detection and writes an analysis
+          report from clues you supply. You must provide those clues first.
+          Write a plugin per the contract, or set the target PID and sensitive
+          addresses yourself.
+        </p>
+        <p>
+          The built-in example uses Notepad and fixed addresses inside that
+          process as the target and clues, then runs simulation and detection.
+          That walkthrough shows what Hawkeye can do and where its limits are
+          &mdash; not a live incident.
+        </p>
+        <p>
+          In <code>-demo</code> mode, Hawkeye actively stages sensitive
+          behavior, then detects it.
+          In <code>-live</code> mode it does not simulate anything; it
+          detects only on the clues you gave. That is the setup for real work.
+          Each dimension in the PDF comes from the behavior-signature library
+          &mdash; the check itself plus the Assessment that explains the finding.
+        </p>
+        <p>
+          Default plugin: <code>plugins\HawkHotTargets.dll</code> (demo and live).
+          Your own DLL: <code>!analyze -plugin:plugins\MyGame.dll -load</code>.
+          Must export <code>HawkHotTargetsQuery</code>.
+          See
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community/tree/main/samples/HawkHotTargets"><code>samples\HawkHotTargets</code></a>.
+          Run <code>!analyze</code> with no arguments in the console for full usage.
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-analyze-usage.png" alt="Hawkeye Lab: !analyze usage in the console.">
+          <figcaption>Figure 15. Usage &mdash; run <code>!analyze</code> with no arguments.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+    </section>
+
+    <footer>
+      Support: <a href="mailto:hawkeye18485@gmail.com">hawkeye18485@gmail.com</a>
+      · <a href="../privacy/">Privacy Policy</a>
+      · <a href="../terms/">Terms of Service</a>
+    </footer>
+  </main>
+</body>
+</html>

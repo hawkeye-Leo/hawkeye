@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hawkeye Community — Official Site | Windows Kernel Research Console</title>
+  <meta name="description" content="Official Hawkeye Community site. Open-source Windows kernel security research console: live memory analysis, !probe, !etw, driver setup. Download source and releases. Hawkeye Lab adds detection and !analyze reports.">
+  <meta name="keywords" content="Hawkeye Community, Hawkeye Lab, Windows kernel research, kernel security console, memory analysis, process analysis, anti-cheat research, open source">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/">
+  <meta property="og:title" content="Hawkeye Community — Official Site">
+  <meta property="og:description" content="Open-source Windows kernel research console. Download Hawkeye Community; Hawkeye Lab adds automated detection.">
+  <meta property="og:url" content="https://hawkeye-leo.github.io/">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="site.css?v=20260903">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research console</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Edition">
+        <a class="active" href="./">Community</a>
+        <a href="lab/">Lab</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker">Hawkeye Community</p>
+    <h2>Research, for learning</h2>
+    <p class="lead">
+      <strong>Community</strong> is for research and learning.
+      You run it on a live system, and you get closer to how it works.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">Download</a>
+      <a class="btn btn-ghost" href="https://github.com/hawkeye-Leo/hawkeye-community">Source</a>
+    </div>
+
+    <p class="note">
+      Authorized systems only. This is a research console, not a bypass kit.
+      Do not use it against software, games, or production systems you do not administer.
+    </p>
+
+    <div class="grid two">
+      <article class="card">
+        <h3><code>!probe</code></h3>
+        <p>A live symbol context. Attach, then search names together.</p>
+      </article>
+      <article class="card">
+        <h3><code>!etw</code></h3>
+        <p>Where the CPU ran in a short window. Process, thread, or the whole system.</p>
+      </article>
+    </div>
+
+    <section>
+      <h3>Illustrated guide</h3>
+      <p>
+        This is the Community walkthrough. Run <code>!help</code> for the full
+        command catalog; run any command with no arguments for usage.
+        Hawkeye Lab includes every command here plus detection and
+        <code>!analyze</code> &mdash; see the <a href="lab/">Lab page</a>.
+      </p>
+
+      <nav class="guide-nav guide-nav--split-4" id="guide-toc" aria-label="Guide contents">
+        <strong>On this page</strong>
+        <ol>
+          <li><a href="#driver-setup">Driver setup</a></li>
+          <li><a href="#probe"><code>!probe</code></a></li>
+          <li><a href="#etw"><code>!etw</code></a></li>
+          <li><a href="#kernel-region"><code>!kernel_region</code></a></li>
+          <li><a href="#memory">Memory</a></li>
+          <li><a href="#support"><code>!support</code></a></li>
+          <li><a href="#more-commands">More commands</a></li>
+        </ol>
+      </nav>
+
+      <article class="guide-step" id="driver-setup">
+        <strong>1. Driver setup</strong>
+        <p>
+          Start Hawkeye Community and open <strong>Driver setup</strong>.
+          The last row, <strong>Driver</strong>, is the one that matters.
+        </p>
+        <p>
+          If you see Figure 1, work the red rows. <strong>Enable test signing</strong>
+          turns on the test-signing environment and installs the Hawkeye test
+          certificate. <strong>Open Windows Security</strong> is where you turn
+          Memory integrity off.
+        </p>
+        <figure class="figure">
+          <img src="guide/driver-setup-1.png" alt="Driver setup with test signing off and Memory integrity on. The status-bar Driver setup button opens this window.">
+          <figcaption>Figure 1. Driver is not loaded. Use the links on the red rows.</figcaption>
+        </figure>
+        <p>Figure 2 means the changes are staged. Restart Windows.</p>
+        <figure class="figure">
+          <img src="guide/driver-setup-2.png" alt="Driver setup after test signing is set and Memory integrity is off. Both rows say Restart needed.">
+          <figcaption>Figure 2. Restart Windows, then start Hawkeye again.</figcaption>
+        </figure>
+        <p>
+          If the machine boots with Secure Boot, Windows blocks <code>bcdedit</code>.
+          Turn Secure Boot off in firmware first, start Windows, then use
+          <strong>Enable test signing</strong>.
+        </p>
+        <p>
+          After the restart, <strong>Driver OK</strong> on the status bar means
+          the environment is ready. <code>!help</code> is the full catalog.
+          Run any command with no arguments for usage.
+        </p>
+        <figure class="figure">
+          <img src="guide/help-catalog.png" alt="Hawkeye Community after Driver OK, showing the !help command reference.">
+          <figcaption>Figure 3. Driver OK, and <code>!help</code> listing the bench.</figcaption>
+        </figure>
+        <p>
+          If you hit a bug, or you have a suggestion, run <code>!support</code>
+          and write to us.
+        </p>
+      </article>
+
+      <article class="guide-step" id="probe">
+        <strong>2. <code>!probe</code> — the entry</strong>
+        <p>
+          If you are curious about a process — System (kernel, PID 4), or
+          <code>dwm.exe</code> — you need one place to start. That is
+          <code>!probe</code>.
+        </p>
+        <p>
+          The question is rarely one name. How composition works. How the
+          desktop keeps a window's pixels from other clients. How the kernel
+          schedules threads. How ETW reaches a third-party driver. Those
+          trails cross modules.
+        </p>
+        <p>
+          <code>!probe</code> attaches a live symbol context to that process
+          (or the kernel) and lets you query many names together, so the
+          clues stay in one view. IDA — or IDA-MCP — is how you get to the
+          one you want.
+        </p>
+        <p>
+          Run <code>!probe</code> with no arguments for usage. Attach, then
+          <code>-find</code>.
+        </p>
+        <figure class="figure">
+          <img src="guide/probe-usage.png" alt="!probe usage in Hawkeye Community: attach, -find, and the dwm.exe example with -mod:.">
+          <figcaption>Figure 4. <code>!probe</code> with no arguments — read this, then attach.</figcaption>
+        </figure>
+        <p>
+          <code>-find</code> only searches symbols that are already indexed.
+          The first time, pass <code>-mod:</code> with the modules you care
+          about. Missing PDBs are downloaded and loaded — that takes a
+          moment.
+        </p>
+        <p>
+          Example from the usage:
+          <code>!probe -find:swapchain,present -mod:dwmcore,dwmredir,udwm -kind:all</code>.
+          Those three DLLs are the ones you are looking at. The comma is AND:
+          a name must contain both <code>present</code> and
+          <code>swapchain</code>. That joint hit is the start of the next
+          question, not the answer.
+        </p>
+        <figure class="figure">
+          <img src="guide/probe-find.png" alt="!probe -find across dwmcore, dwmredir, and udwm. Missing PDBs load, then 73 joint hits.">
+          <figcaption>Figure 5. The same line: missing PDBs load, then the joint hits.</figcaption>
+        </figure>
+        <p>
+          <code>!probe -status</code> shows what is loaded so far.
+        </p>
+        <figure class="figure">
+          <img src="guide/probe-status.png" alt="!probe -status: attached PID, indexed symbol count, and which modules have a PDB.">
+          <figcaption>Figure 6. <code>!probe -status</code> — which symbols are loaded.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="etw">
+        <strong>3. <code>!etw</code> — who actually ran</strong>
+        <p>
+          <code>!probe</code> is names. <code>!etw</code> is execution:
+          which addresses ran in this window.
+        </p>
+        <p>
+          Injected code is often not a module. It lives on the heap inside
+          another process. Nothing in the module list names it. Sampling
+          sees it only if a thread ran it.
+        </p>
+        <p>
+          Run <code>!etw</code> with no arguments for usage. Pick a process,
+          a thread, or <code>-all</code>.
+        </p>
+        <figure class="figure">
+          <img src="guide/etw-usage.png" alt="!etw usage in Hawkeye Community: sample a process, a thread, or the whole system.">
+          <figcaption>Figure 7. <code>!etw</code> with no arguments — read this, then pick a scope.</figcaption>
+        </figure>
+        <p>
+          Default sampling lists RIP under each thread — the instruction
+          pointers that thread was seen at. That is enough to sketch what
+          it was doing.
+        </p>
+        <figure class="figure">
+          <img src="guide/etw-rip-1.png" alt="!etw RIP samples grouped under a process, then a thread.">
+          <figcaption>Figure 8. RIP under the thread — addresses it was sampled at.</figcaption>
+        </figure>
+        <p>
+          For one thread,
+          <code>!etw -tid:&lt;tid&gt; -stack:1</code>
+          samples call stacks instead. Stacks hit in that window are shown.
+        </p>
+        <p>
+          Figure 9 is the thread that composes in <code>dwm.exe</code>.
+          The stacks are <code>dwm</code> putting windows together.
+        </p>
+        <figure class="figure">
+          <img src="guide/etw-stack.png" alt="!etw -stack:1 on a dwm.exe thread: composition stacks with symbols resolved.">
+          <figcaption>Figure 9. <code>dwm.exe</code> — composition stacks for that thread.</figcaption>
+        </figure>
+        <p>
+          <code>!sym</code> downloads and loads symbols. <code>!etw</code>
+          resolves names from what is loaded. Run <code>!sym</code> for
+          usage.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="kernel-region">
+        <strong>4. <code>!kernel_region</code> — which band</strong>
+        <p>
+          A kernel VA has a type. <code>!kernel_region</code> names it.
+        </p>
+        <p>
+          <code>!kernel_region -list</code> shows the live IDs on this
+          machine. They differ by OS.
+        </p>
+        <p>
+          Typically <code>ntoskrnl</code>, driver images, and UEFI land in
+          <code>imageMType</code>. Kernel stacks in
+          <code>stackMType</code>. Paged pool in
+          <code>pagedMType</code>. Nonpaged pool in
+          <code>nonpagedMType</code>. Unexpected kernel code often lands in
+          <code>systemMType</code>.
+        </p>
+        <p>
+          Run <code>!kernel_region</code> with no arguments for usage.
+          <code>-list</code> is the map. <code>-va:</code> asks one address.
+        </p>
+        <figure class="figure">
+          <img src="guide/kernel-region-list.png" alt="!kernel_region usage and -list: live region IDs on this system.">
+          <figcaption>Figure 10. Usage, then <code>-list</code> — IDs on this machine.</figcaption>
+        </figure>
+        <p>
+          <code>-va:</code> takes one address. Use a RIP from
+          <code>!etw</code>. This one is in <code>ntoskrnl</code>, so the
+          type is image. That narrows the scope. Deeper analysis starts
+          from there.
+        </p>
+        <figure class="figure">
+          <img src="guide/kernel-region-va.png" alt="!kernel_region -va example: a sampled ntoskrnl RIP classified as image region.">
+          <figcaption>Figure 11. Example of <code>-va:</code> — this RIP is image.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="memory">
+        <strong>5. Memory — ReadMemory</strong>
+        <p>
+          A VA from the bench is enough. <strong>Memory</strong> opens the
+          viewer. PID, address, <strong>ReadMemory</strong>. One page:
+          disassembly and hex.
+        </p>
+        <p>
+          One way to get that VA:
+          <code>!iguard_scan -all</code>.
+          It walks kernel modules for
+          <code>_guard_dispatch_icall</code> pits. A hit is a placeholder
+          that points at executable system or nonpaged memory.
+          <code>-all</code> is every kernel module;
+          <code>-m:</code> is one driver. Run
+          <code>!iguard_scan</code> with no arguments for usage.
+        </p>
+        <figure class="figure">
+          <img src="guide/memory-iguard-sym.png" alt="!iguard_scan -m:ntoskrnl.exe -sym:1: named pit targets, and the Memory button.">
+          <figcaption>Figure 12. <code>!iguard_scan -m:ntoskrnl.exe -sym:1</code> — a pit with names, then <strong>Memory</strong>.</figcaption>
+        </figure>
+        <p>
+          Copy the target into Memory.
+        </p>
+        <figure class="figure">
+          <img src="guide/memory-viewer.png" alt="Memory Viewer after ReadMemory: disassembly and hex for one kernel page.">
+          <figcaption>Figure 13. <strong>ReadMemory</strong> — one page, disassembly and hex.</figcaption>
+        </figure>
+        <p>
+          After the read, the console counts what the page decoded. That is
+          the start of looking closer, not a verdict.
+        </p>
+        <figure class="figure">
+          <img src="guide/memory-stats.png" alt="Console instruction stats after ReadMemory on the same page.">
+          <figcaption>Figure 14. The same page, counted in the console.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="support">
+        <strong>6. <code>!support</code></strong>
+        <p>
+          When something breaks, run <code>!support</code>.
+          It prints a system report. Email that to us.
+        </p>
+        <figure class="figure">
+          <img src="guide/support.png" alt="!support in Hawkeye Community: a system report, website, and email.">
+          <figcaption>Figure 15. <code>!support</code> — the report to send.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+      <article class="guide-step" id="more-commands">
+        <strong>7. More commands</strong>
+        <p>
+          <code>!help</code> is the full catalog. Anything not walked through
+          above &mdash; <code>!sym</code>, <code>!modules</code>,
+          <code>!threads</code>, and the rest &mdash; starts there.
+          Run a command with no arguments for usage.
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">↑ Contents</a></p>
+      </article>
+    </section>
+
+    <section class="card edition-compare" id="lab">
+      <p class="lab-head">
+        <a class="btn btn-primary" href="lab/">Hawkeye Lab</a>
+        <span class="aside">detection and reports on the same bench</span>
+      </p>
+      <p class="edition-compare-lead">
+        Community is the open research console. Lab adds automated high-risk
+        detection and a scored analysis report on top of the same foundation.
+      </p>
+      <table class="edition-compare-table">
+        <thead>
+          <tr>
+            <th scope="col">Capability</th>
+            <th scope="col" class="col-yes">Community</th>
+            <th scope="col" class="col-yes">Lab</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Live console + driver setup</th>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>!probe</code>, <code>!etw</code>, memory tools</th>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">High-risk detection commands</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>!analyze</code> (20-check workflow)</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">Scored analysis report (PDF / text)</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">Lab <code>-demo</code> staging</th>
+            <td class="col-no" aria-label="Not included">&mdash;</td>
+            <td class="col-yes" aria-label="Included">&#10003;</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="edition-compare-foot">
+        Lab includes everything in Community.
+        Community: GPL-3.0-or-later &middot; Lab: subscription ($35 / month).
+      </p>
+      <p class="edition-compare-link">
+        Commands, sample reports, and the illustrated guide:
+        <a href="lab/">Hawkeye Lab</a>.
+      </p>
+    </section>
+
+    <footer>
+      Support: <a href="mailto:hawkeye18485@gmail.com">hawkeye18485@gmail.com</a>
+      · <a href="privacy/">Privacy Policy</a>
+      · <a href="terms/">Terms of Service</a>
+      · GPL-3.0-or-later
+    </footer>
+  </main>
+</body>
+</html>
