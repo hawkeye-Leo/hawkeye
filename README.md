@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://hawkeye-leo.github.io/hawkeye/">
-    <img src="assets/brand-banner.svg" alt="Hawkeye — Research console" width="100%">
+    <img src="https://raw.githubusercontent.com/hawkeye-Leo/hawkeye/main/assets/brand-banner.png" alt="Hawkeye Research console" width="100%">
   </a>
 </p>
 
