@@ -708,3 +708,129 @@ footer {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* Post-checkout thank-you (Lab) */
+.thanks-page {
+  padding-top: 1.35rem;
+}
+
+.thanks-hero {
+  position: relative;
+  text-align: center;
+  margin: 0 0 1.35rem;
+  padding: 1.75rem 1.25rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #c8dccf;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(125, 206, 142, 0.22), transparent 42%),
+    radial-gradient(circle at 88% 12%, rgba(47, 111, 69, 0.14), transparent 38%),
+    linear-gradient(165deg, #f7fbf8 0%, var(--green-soft) 100%);
+  overflow: hidden;
+}
+
+.thanks-hero::before,
+.thanks-hero::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(47, 111, 69, 0.35);
+  animation: thanks-spark 2.8s ease-in-out infinite;
+}
+
+.thanks-hero::before {
+  top: 1.1rem;
+  left: 14%;
+  animation-delay: 0.2s;
+}
+
+.thanks-hero::after {
+  top: 1.4rem;
+  right: 16%;
+  animation-delay: 1.1s;
+}
+
+@keyframes thanks-spark {
+  0%, 100% { opacity: 0.25; transform: translateY(0) scale(1); }
+  50% { opacity: 0.85; transform: translateY(-4px) scale(1.15); }
+}
+
+.thanks-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0 auto 0.85rem;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(47, 111, 69, 0.28);
+  animation: thanks-pop 0.55s ease-out;
+}
+
+@keyframes thanks-pop {
+  0% { transform: scale(0.82); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.thanks-check svg {
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.thanks-hero h2 {
+  margin-bottom: 0.45rem;
+}
+
+.thanks-lead {
+  max-width: 34rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0;
+}
+
+.thanks-card {
+  margin-bottom: 0.85rem;
+}
+
+.thanks-card h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.thanks-card p {
+  margin: 0 0 0.65rem;
+  color: var(--muted);
+}
+
+.thanks-card p:last-child {
+  margin-bottom: 0;
+}
+
+.thanks-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.thanks-steps li {
+  margin: 0 0 0.45rem;
+}
+
+.thanks-steps li:last-child {
+  margin-bottom: 0;
+}
+
+.thanks-page .actions {
+  justify-content: center;
+  margin-top: 1.1rem;
+}
+
+.thanks-page .note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
