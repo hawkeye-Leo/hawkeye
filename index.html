@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hawkeye Community â€” Official Site | Windows Kernel Research Console</title>
-  <meta name="description" content="Hawkeye â€” Windows kernel security research console for anti-cheat and live forensics. Open-source Community edition; Hawkeye Lab adds automated detection and !analyze reports.">
+  <title>Hawkeye Community â€?Official Site | Windows Kernel Research Console</title>
+  <meta name="description" content="Hawkeye â€?Windows kernel security research console for anti-cheat and live forensics. Open-source Community edition; Hawkeye Lab adds automated detection and !analyze reports.">
   <meta name="keywords" content="Hawkeye, anti-cheat research, Windows kernel security, kernel driver analysis, ETW, memory forensics, Hawkeye Lab, Hawkeye Community">
   <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/">
-  <meta property="og:title" content="Hawkeye Community â€” Official Site">
+  <meta property="og:title" content="Hawkeye Community â€?Official Site">
   <meta property="og:description" content="Open-source Windows kernel research console. Download Hawkeye Community; Hawkeye Lab adds automated detection.">
   <meta property="og:url" content="https://hawkeye-leo.github.io/hawkeye/">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="site.css?v=20260903">
+  <link rel="stylesheet" href="site.css?v=20260908">
 </head>
 <body>
   <header class="top">
@@ -34,7 +34,7 @@
     <p class="kicker">Windows kernel security Â· anti-cheat research</p>
     <h2>Research console for live forensics</h2>
     <p class="lead">
-      <strong>Hawkeye Community</strong> is the open-source bench â€” driver-backed
+      <strong>Hawkeye Community</strong> is the open-source bench â€?driver-backed
       <code>!probe</code>, <code>!etw</code>, and memory work on Windows 10/11
       for anti-cheat and kernel research on systems you administer.
     </p>
@@ -64,7 +64,7 @@
     <section>
       <h3>Research notes</h3>
       <p>
-        Mechanism-first write-ups on DWM, anti-capture, and detection â€”
+        Mechanism-first write-ups on DWM, anti-capture, and detection â€?
         <a href="research/">Hawkeye Research</a>.
         First article: <a href="research/capture/01-display-affinity/"><code>SetWindowDisplayAffinity</code></a>.
       </p>
@@ -134,10 +134,10 @@
       </article>
 
       <article class="guide-step" id="probe">
-        <strong>2. <code>!probe</code> â€” the entry</strong>
+        <strong>2. <code>!probe</code> â€?the entry</strong>
         <p>
-          If you are curious about a process â€” System (kernel, PID 4), or
-          <code>dwm.exe</code> â€” you need one place to start. That is
+          If you are curious about a process â€?System (kernel, PID 4), or
+          <code>dwm.exe</code> â€?you need one place to start. That is
           <code>!probe</code>.
         </p>
         <p>
@@ -149,7 +149,7 @@
         <p>
           <code>!probe</code> attaches a live symbol context to that process
           (or the kernel) and lets you query many names together, so the
-          clues stay in one view. IDA â€” or IDA-MCP â€” is how you get to the
+          clues stay in one view. IDA â€?or IDA-MCP â€?is how you get to the
           one you want.
         </p>
         <p>
@@ -158,12 +158,12 @@
         </p>
         <figure class="figure">
           <img src="guide/probe-usage.png" alt="!probe usage in Hawkeye Community: attach, -find, and the dwm.exe example with -mod:.">
-          <figcaption>Figure 4. <code>!probe</code> with no arguments â€” read this, then attach.</figcaption>
+          <figcaption>Figure 4. <code>!probe</code> with no arguments â€?read this, then attach.</figcaption>
         </figure>
         <p>
           <code>-find</code> only searches symbols that are already indexed.
           The first time, pass <code>-mod:</code> with the modules you care
-          about. Missing PDBs are downloaded and loaded â€” that takes a
+          about. Missing PDBs are downloaded and loaded â€?that takes a
           moment.
         </p>
         <p>
@@ -183,12 +183,12 @@
         </p>
         <figure class="figure">
           <img src="guide/probe-status.png" alt="!probe -status: attached PID, indexed symbol count, and which modules have a PDB.">
-          <figcaption>Figure 6. <code>!probe -status</code> â€” which symbols are loaded.</figcaption>
+          <figcaption>Figure 6. <code>!probe -status</code> â€?which symbols are loaded.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="etw">
-        <strong>3. <code>!etw</code> â€” who actually ran</strong>
+        <strong>3. <code>!etw</code> â€?who actually ran</strong>
         <p>
           <code>!probe</code> is names. <code>!etw</code> is execution:
           which addresses ran in this window.
@@ -204,16 +204,16 @@
         </p>
         <figure class="figure">
           <img src="guide/etw-usage.png" alt="!etw usage in Hawkeye Community: sample a process, a thread, or the whole system.">
-          <figcaption>Figure 7. <code>!etw</code> with no arguments â€” read this, then pick a scope.</figcaption>
+          <figcaption>Figure 7. <code>!etw</code> with no arguments â€?read this, then pick a scope.</figcaption>
         </figure>
         <p>
-          Default sampling lists RIP under each thread â€” the instruction
+          Default sampling lists RIP under each thread â€?the instruction
           pointers that thread was seen at. That is enough to sketch what
           it was doing.
         </p>
         <figure class="figure">
           <img src="guide/etw-rip-1.png" alt="!etw RIP samples grouped under a process, then a thread.">
-          <figcaption>Figure 8. RIP under the thread â€” addresses it was sampled at.</figcaption>
+          <figcaption>Figure 8. RIP under the thread â€?addresses it was sampled at.</figcaption>
         </figure>
         <p>
           For one thread,
@@ -226,17 +226,17 @@
         </p>
         <figure class="figure">
           <img src="guide/etw-stack.png" alt="!etw -stack:1 on a dwm.exe thread: composition stacks with symbols resolved.">
-          <figcaption>Figure 9. <code>dwm.exe</code> â€” composition stacks for that thread.</figcaption>
+          <figcaption>Figure 9. <code>dwm.exe</code> â€?composition stacks for that thread.</figcaption>
         </figure>
         <p>
           <code>!sym</code> downloads and loads symbols. <code>!etw</code>
           resolves names from what is loaded. Run <code>!sym</code> for
           usage.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="kernel-region">
-        <strong>4. <code>!kernel_region</code> â€” which band</strong>
+        <strong>4. <code>!kernel_region</code> â€?which band</strong>
         <p>
           A kernel VA has a type. <code>!kernel_region</code> names it.
         </p>
@@ -258,7 +258,7 @@
         </p>
         <figure class="figure">
           <img src="guide/kernel-region-list.png" alt="!kernel_region usage and -list: live region IDs on this system.">
-          <figcaption>Figure 10. Usage, then <code>-list</code> â€” IDs on this machine.</figcaption>
+          <figcaption>Figure 10. Usage, then <code>-list</code> â€?IDs on this machine.</figcaption>
         </figure>
         <p>
           <code>-va:</code> takes one address. Use a RIP from
@@ -268,12 +268,12 @@
         </p>
         <figure class="figure">
           <img src="guide/kernel-region-va.png" alt="!kernel_region -va example: a sampled ntoskrnl RIP classified as image region.">
-          <figcaption>Figure 11. Example of <code>-va:</code> â€” this RIP is image.</figcaption>
+          <figcaption>Figure 11. Example of <code>-va:</code> â€?this RIP is image.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="memory">
-        <strong>5. Memory â€” ReadMemory</strong>
+        <strong>5. Memory â€?ReadMemory</strong>
         <p>
           A VA from the bench is enough. <strong>Memory</strong> opens the
           viewer. PID, address, <strong>ReadMemory</strong>. One page:
@@ -291,14 +291,14 @@
         </p>
         <figure class="figure">
           <img src="guide/memory-iguard-sym.png" alt="!iguard_scan -m:ntoskrnl.exe -sym:1: named pit targets, and the Memory button.">
-          <figcaption>Figure 12. <code>!iguard_scan -m:ntoskrnl.exe -sym:1</code> â€” a pit with names, then <strong>Memory</strong>.</figcaption>
+          <figcaption>Figure 12. <code>!iguard_scan -m:ntoskrnl.exe -sym:1</code> â€?a pit with names, then <strong>Memory</strong>.</figcaption>
         </figure>
         <p>
           Copy the target into Memory.
         </p>
         <figure class="figure">
           <img src="guide/memory-viewer.png" alt="Memory Viewer after ReadMemory: disassembly and hex for one kernel page.">
-          <figcaption>Figure 13. <strong>ReadMemory</strong> â€” one page, disassembly and hex.</figcaption>
+          <figcaption>Figure 13. <strong>ReadMemory</strong> â€?one page, disassembly and hex.</figcaption>
         </figure>
         <p>
           After the read, the console counts what the page decoded. That is
@@ -308,7 +308,7 @@
           <img src="guide/memory-stats.png" alt="Console instruction stats after ReadMemory on the same page.">
           <figcaption>Figure 14. The same page, counted in the console.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="support">
         <strong>6. <code>!support</code></strong>
@@ -318,9 +318,9 @@
         </p>
         <figure class="figure">
           <img src="guide/support.png" alt="!support in Hawkeye Community: a system report, website, and email.">
-          <figcaption>Figure 15. <code>!support</code> â€” the report to send.</figcaption>
+          <figcaption>Figure 15. <code>!support</code> â€?the report to send.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="more-commands">
         <strong>7. More commands</strong>
@@ -330,7 +330,7 @@
           <code>!threads</code>, and the rest &mdash; starts there.
           Run a command with no arguments for usage.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
     </section>
 

@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hawkeye Lab â€” Official Site | Kernel Detection &amp; Analysis</title>
+  <title>Hawkeye Lab â€?Official Site | Kernel Detection &amp; Analysis</title>
   <meta name="description" content="Official Hawkeye Lab page. Professional Windows kernel research console with automated high-risk detection, !analyze workflow, and scored reports. Built on Hawkeye Community. $35/month.">
   <meta name="keywords" content="Hawkeye Lab, Hawkeye Community, Windows kernel security, anti-cheat research, memory forensics, behavior detection, kernel driver analysis">
   <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/lab/">
-  <meta property="og:title" content="Hawkeye Lab â€” Official Site">
+  <meta property="og:title" content="Hawkeye Lab â€?Official Site">
   <meta property="og:description" content="Kernel research console with automated detection and analysis reports. Subscription edition of Hawkeye Community.">
   <meta property="og:url" content="https://hawkeye-leo.github.io/hawkeye/lab/">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="../site.css?v=20260904">
+  <link rel="stylesheet" href="../site.css?v=20260908">
 </head>
 <body>
   <header class="top">
@@ -207,7 +207,7 @@
         </ol>
       </nav>
       <article class="guide-step" id="plugin">
-        <strong>1. Clues â€” the plugin</strong>
+        <strong>1. Clues â€?the plugin</strong>
         <p>
           <code>!analyze</code> does not guess the target. It needs clues:
           which process, and which addresses in that process you treat as
@@ -231,7 +231,7 @@
           in that process's memory. Hawkeye takes those clues and runs
           automated detection for suspicious behavior.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="complete-run">
         <strong>2. A complete run</strong>
@@ -286,7 +286,7 @@
         <p>
           On your machine the file is saved under <code>reports\</code>.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="same-setup">
         <strong>3. Same setup as Community</strong>
@@ -301,10 +301,10 @@
           Those steps are documented once &mdash; on the Community page.
           When the driver is loaded, start the Lab edition.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="probe">
-        <strong>4. <code>!probe</code> â€” the entry</strong>
+        <strong>4. <code>!probe</code> â€?the entry</strong>
         <p>
           Lab ships the same bench as Community. Symbol context starts with
           <code>!probe</code> &mdash; attach to a process or the kernel, then
@@ -312,12 +312,12 @@
         </p>
         <p>
           The illustrated walkthrough is on the Community page:
-          <a href="../#probe">step 2 â€” <code>!probe</code></a>.
+          <a href="../#probe">step 2 â€?<code>!probe</code></a>.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="etw">
-        <strong>5. <code>!etw</code> â€” who actually ran</strong>
+        <strong>5. <code>!etw</code> â€?who actually ran</strong>
         <p>
           <code>!etw</code> samples which instruction pointers ran in a short
           window &mdash; process, thread, or the whole system. Lab pairs it with
@@ -325,12 +325,12 @@
         </p>
         <p>
           See the Community walkthrough:
-          <a href="../#etw">step 3 â€” <code>!etw</code></a>.
+          <a href="../#etw">step 3 â€?<code>!etw</code></a>.
         </p>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="cross-rw">
-        <strong>6. <code>!cross_rw</code> â€” who else is reading this process</strong>
+        <strong>6. <code>!cross_rw</code> â€?who else is reading this process</strong>
         <p>
           <code>!cross_rw</code> watches a target PID for cross-process access
           &mdash; <code>ReadProcessMemory</code> and the like. The window is
@@ -352,10 +352,10 @@
           <img src="../guide/lab-cross-rw-usage.png" alt="Hawkeye Lab: !cross_rw and !cross_rw_sim usage in the console.">
           <figcaption>Figure 6. Usage &mdash; pair the detector with the sim on the same PID.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="phys-read">
-        <strong>7. <code>!phys_read</code> â€” physical-memory reads</strong>
+        <strong>7. <code>!phys_read</code> â€?physical-memory reads</strong>
         <p>
           Cross-process access is not one technique.
           <code>!cross_rw</code> covers attach-based reads such as
@@ -379,10 +379,10 @@
           <img src="../guide/lab-phys-read-usage.png" alt="Hawkeye Lab: !phys_read and !phys_read_sim usage in the console.">
           <figcaption>Figure 7. Usage &mdash; same <code>-pid</code> and <code>-va</code> on both commands.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="map-io">
-        <strong>8. <code>!map_io</code> â€” MmMapIoSpace mapping</strong>
+        <strong>8. <code>!map_io</code> â€?MmMapIoSpace mapping</strong>
         <p>
           Physical-memory access is not one technique either.
           <code>!phys_read</code> covers <code>MmCopyMemory</code>
@@ -410,10 +410,10 @@
           <img src="../guide/lab-map-io-usage.png" alt="Hawkeye Lab: !map_io and !map_io_sim usage in the console.">
           <figcaption>Figure 8. Usage &mdash; same <code>-pid</code>, <code>-va</code>, and <code>-cache</code> on both commands.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="active-pages">
-        <strong>9. <code>!active_pages</code> â€” active pages in the target process virtual address space</strong>
+        <strong>9. <code>!active_pages</code> â€?active pages in the target process virtual address space</strong>
         <p>
           Finding the code body of malware, or of software that should not
           be there, is slow if you walk the address space by hand.
@@ -445,10 +445,10 @@
           <img src="../guide/lab-active-pages-usage.png" alt="Hawkeye Lab: !active_pages and !active_pages_sim usage in the console.">
           <figcaption>Figure 9. Usage &mdash; user-mode or kernel; pair the detector on the same PID with <code>-rx:</code>.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="hidden-windows">
-        <strong>10. <code>!hidden_windows</code> â€” DisplayAffinity hidden windows</strong>
+        <strong>10. <code>!hidden_windows</code> â€?DisplayAffinity hidden windows</strong>
         <p>
           Some windows are kept out of capture along the DisplayAffinity
           path: <code>SetWindowDisplayAffinity</code>, or
@@ -470,10 +470,10 @@
           <img src="../guide/lab-hidden-windows-usage.png" alt="Hawkeye Lab: !hidden_windows and !hidden_windows_sim usage in the console.">
           <figcaption>Figure 10. Usage &mdash; <code>-init</code> then detect; the sim hides Hawkeye's main window.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="hidden-visuals">
-        <strong>11. <code>!hidden_visuals</code> â€” Visuals hidden from capture</strong>
+        <strong>11. <code>!hidden_visuals</code> â€?Visuals hidden from capture</strong>
         <p>
           Hiding a window (DisplayAffinity) is one technique.
           Hiding a Visual is another: fuse a Visual in-process or
@@ -495,10 +495,10 @@
           <img src="../guide/lab-hidden-visuals-usage.png" alt="Hawkeye Lab: !hidden_visuals and !hidden_visuals_sim in the console.">
           <figcaption>Figure 11. Usage &mdash; load <code>dwmcore</code> symbols if asked; sim <code>-enable:1</code> / <code>-enable:0</code>.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="ukexec">
-        <strong>12. <code>!ukexec</code> â€” user-accessible pages in the kernel region</strong>
+        <strong>12. <code>!ukexec</code> â€?user-accessible pages in the kernel region</strong>
         <p>
           Classic injection sits in user-mode mappings. A newer technique
           places executable code in the kernel region of the target
@@ -521,10 +521,10 @@
           <img src="../guide/lab-ukexec-usage.png" alt="Hawkeye Lab: !ukexec and !ukexec_sim usage in the console.">
           <figcaption>Figure 12. Usage &mdash; <code>-busy</code> or <code>-pid</code>; sim takes a user-mode PID.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="hidden-process">
-        <strong>13. <code>!hidden_process</code> â€” hidden processes and threads</strong>
+        <strong>13. <code>!hidden_process</code> â€?hidden processes and threads</strong>
         <p>
           Malware that injects into a legitimate process often starts a
           thread there, then hides that process or thread so the usual
@@ -541,7 +541,7 @@
           <img src="../guide/lab-hidden-process-usage.png" alt="Hawkeye Lab: !hidden_process usage in the console.">
           <figcaption>Figure 13. Usage &mdash; <code>!hidden_process -run</code>.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="invlpg">
         <strong>14. INVLPG / special instructions</strong>
@@ -576,10 +576,10 @@
           <img src="../guide/lab-invlpg-report.png" alt="Hawkeye Lab: instruction decode report on a simulated high-risk kernel page with INVLPG flagged HIGH.">
           <figcaption>Figure 14. A staged kernel code page &mdash; instruction decode with <code>[risk] HIGH</code> on <code>invlpg</code>.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
       <article class="guide-step" id="analyze">
-        <strong>15. <code>!analyze</code> â€” automated detection and report</strong>
+        <strong>15. <code>!analyze</code> â€?automated detection and report</strong>
         <p>
           <code>!analyze</code> runs automated detection and writes an analysis
           report from clues you supply. You must provide those clues first.
@@ -612,7 +612,7 @@
           <img src="../guide/lab-analyze-usage.png" alt="Hawkeye Lab: !analyze usage in the console.">
           <figcaption>Figure 15. Usage &mdash; run <code>!analyze</code> with no arguments.</figcaption>
         </figure>
-        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†‘ Contents</a></p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">â†?Contents</a></p>
       </article>
     </section>
 
