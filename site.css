@@ -32,6 +32,12 @@ a:hover { color: var(--green-deep); }
   padding: 0 1.25rem;
 }
 
+.top-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -64,8 +70,14 @@ a:hover { color: var(--green-deep); }
 
 .tabs {
   display: flex;
+  flex: 1 1 100%;
   gap: 0.25rem;
   padding: 0.4rem 0 0;
+}
+
+.tabs a:last-child {
+  margin-left: auto;
+  padding-left: 1.25rem;
 }
 
 .tabs a {
