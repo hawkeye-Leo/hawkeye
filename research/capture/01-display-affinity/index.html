@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Part 1: SetWindowDisplayAffinity — Hawkeye Research</title>
+  <title>Part 1: SetWindowDisplayAffinity &mdash; Hawkeye Research</title>
   <meta name="description" content="From win32kfull SetDisplayAffinity to dwmredir CWindowContext::HasProtectedContent: mechanism, memory proof, and detection.">
   <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/01-display-affinity/">
-  <link rel="stylesheet" href="../../../site.css?v=20260908">
+  <link rel="stylesheet" href="../../../site.css?v=20260909">
 </head>
 <body>
   <header class="top">
@@ -55,8 +55,8 @@
       </p>
       <p>This series has three parts. This article is part 1:</p>
       <ul class="article-list">
-        <li><strong>Part 1 (this page)</strong>: <code>SetWindowDisplayAffinity</code> — mechanism &amp; detection</li>
-        <li>Part 2: Visual-layer hiding — mechanism &amp; detection</li>
+        <li><strong>Part 1 (this page)</strong>: <code>SetWindowDisplayAffinity</code> &mdash; mechanism &amp; detection</li>
+        <li>Part 2: Visual-layer hiding &mdash; mechanism &amp; detection</li>
         <li>Part 3: BitBlt-style &ldquo;super screenshot&rdquo; approach</li>
       </ul>
     </article>
@@ -110,9 +110,9 @@
       </p>
       <figure class="figure">
         <img src="images/probe-protect-search.png" alt="Hawkeye !probe search for protect in DWM modules, listing IsProtected and HasProtectedContent symbols.">
-        <figcaption>Figure 1. <code>!probe -find:protect</code> — many protection-related symbols; below we focus on <code>CWindowContext</code>.</figcaption>
+        <figcaption>Figure 1. <code>!probe -find:protect</code> &mdash; many protection-related symbols; below we focus on <code>CWindowContext</code>.</figcaption>
       </figure>
-      <p>Strongest candidates in <code>dwmredir</code> — two functions tied to window content:</p>
+      <p>Strongest candidates in <code>dwmredir</code> &mdash; two functions tied to window content:</p>
       <ul class="article-list">
         <li><code>CWindowContext::HasProtectedContent</code></li>
         <li><code>CWindowContext::NotifyProtectionChange</code></li>
@@ -132,7 +132,7 @@
       </p>
       <figure class="figure">
         <img src="images/has-protected-content-asm.png" alt="HasProtectedContent loads dword at object offset 0x114, shifts right 6, ANDs with 1.">
-        <figcaption>Figure 2. Load <code>[rcx+0x114]</code>, <code>SHR 6</code>, <code>AND 1</code> — i.e. test <strong>bit 6 (0x40)</strong> of that DWORD.</figcaption>
+        <figcaption>Figure 2. Load <code>[rcx+0x114]</code>, <code>SHR 6</code>, <code>AND 1</code> &mdash; i.e. test <strong>bit 6 (0x40)</strong> of that DWORD.</figcaption>
       </figure>
       <p>
         So <code>CWindowContext</code> carries a flag DWORD at offset <code>+0x114</code>;
@@ -145,11 +145,11 @@
       </p>
       <figure class="figure">
         <img src="images/probe-vftable-find.png" alt="!probe finds two CWindowContext vftables; IDwmWindow at 0x7FFAF582A000.">
-        <figcaption>Figure 3. <code>!probe -find:CWindowContext,vftable -mod:dwmredir</code> — locate the <code>IDwmWindow</code> vftable.</figcaption>
+        <figcaption>Figure 3. <code>!probe -find:CWindowContext,vftable -mod:dwmredir</code> &mdash; locate the <code>IDwmWindow</code> vftable.</figcaption>
       </figure>
       <figure class="figure">
         <img src="images/vftable-idwmwindow.png" alt="Memory Viewer at CWindowContext IDwmWindow vftable address in dwmredir.dll.">
-        <figcaption>Figure 4. Vftable lives in <code>dwmredir.dll</code> — use it to scan DWM heap objects.</figcaption>
+        <figcaption>Figure 4. Vftable lives in <code>dwmredir.dll</code> &mdash; use it to scan DWM heap objects.</figcaption>
       </figure>
     </article>
 
@@ -215,8 +215,8 @@
         <li>Resolve the <code>IDwmWindow</code> vtable address from <code>dwmredir.dll</code> symbols (PDB).</li>
         <li>Scan <code>dwm.exe</code> read-write regions for pointers equal to that vtable.</li>
         <li>
-          During <strong>calibration</strong>, enable anti-capture on a known window — Hawkeye
-          uses its own main window via <code>SetWindowDisplayAffinity</code> — then select the
+          During <strong>calibration</strong>, enable anti-capture on a known window &mdash; Hawkeye
+          uses its own main window via <code>SetWindowDisplayAffinity</code> &mdash; then select the
           matching object by vtable, protection bit 6, window kind, HWND, and owning PID.
         </li>
         <li>Record object-relative offsets for flags, kind, HWND, and PID; reuse them on later scans.</li>
@@ -246,10 +246,10 @@
         <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">GitHub Releases (latest)</a>
       </p>
       <p>
-        <strong>Next in the series:</strong> Visual-layer hiding — a more flexible and covert
+        <strong>Next in the series:</strong> Visual-layer hiding &mdash; a more flexible and covert
         anti-capture approach.
       </p>
-      <p class="guide-up"><a href="#background">↑ Contents</a></p>
+      <p class="guide-up"><a href="#background">&uarr; Contents</a></p>
     </article>
 
     <p class="article-nav">
