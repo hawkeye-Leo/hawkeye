@@ -1,12 +1,12 @@
 <p align="center">
   <a href="https://hawkeye-leo.github.io/hawkeye/">
-    <img src="https://raw.githubusercontent.com/hawkeye-Leo/hawkeye/main/assets/brand-banner.png" alt="Hawkeye Research console" width="1200">
+    <img src="https://raw.githubusercontent.com/hawkeye-Leo/hawkeye/main/assets/banner-header.png" alt="Hawkeye Research console" width="1200">
   </a>
 </p>
 
 <p align="center">
   <strong>Windows kernel security research for anti-cheat &amp; live forensics.</strong><br>
-  Driver-backed console — ETW, symbols, memory — on systems you administer.
+  Driver-backed console — memory-access detection solutions, anti-screenshot detection solutions, automated simulation and detection, and professional analysis reports.
 </p>
 
 <p align="center">
