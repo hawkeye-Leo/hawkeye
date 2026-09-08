@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hidden windows &amp; anti-capture — Hawkeye Research</title>
+  <meta name="description" content="Hawkeye capture series: SetWindowDisplayAffinity, DWM Visual hiding, BitBlt observation.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/">
+  <link rel="stylesheet" href="../../site.css?v=20260907">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../">Community</a>
+        <a href="../../lab/">Lab</a>
+        <a class="active" href="../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker"><a href="../">Research</a> · Capture</p>
+    <h2>Hidden windows &amp; anti-capture</h2>
+    <p class="lead">
+      Three-part series: HWND-level DisplayAffinity, DWM Visual-layer hiding, then BitBlt-style
+      capture compared to composed output.
+    </p>
+
+    <section>
+      <h3>Articles</h3>
+      <ul class="article-list">
+        <li>
+          <strong><a href="01-display-affinity/">Part 1: SetWindowDisplayAffinity — mechanism &amp; detection</a></strong>
+          <br>
+          win32kfull chain → DWM <code>CWindowContext</code> → memory signatures &amp; detection limits
+        </li>
+        <li>
+          <strong>Part 2: Visual-layer hiding (planned)</strong>
+          <br>
+          Frameless / custom chrome: protection on CVisual instead of HWND 0x40
+        </li>
+        <li>
+          <strong>Part 3: BitBlt-style &ldquo;super screenshot&rdquo; approach (planned)</strong>
+          <br>
+          How raw BitBlt reads relate to DWM composition and DisplayAffinity
+        </li>
+      </ul>
+    </section>
+
+    <p class="article-nav">
+      <a href="../">← All research</a>
+      <a href="01-display-affinity/">Part 1 →</a>
+    </p>
+
+    <footer>
+      <a href="../../">Community</a>
+      · <a href="../../lab/">Lab</a>
+    </footer>
+  </main>
+</body>
+</html>

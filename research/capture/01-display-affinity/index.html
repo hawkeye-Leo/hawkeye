@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 1: SetWindowDisplayAffinity — Hawkeye Research</title>
+  <meta name="description" content="From win32kfull SetDisplayAffinity to dwmredir CWindowContext::HasProtectedContent: mechanism, memory proof, and detection.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/01-display-affinity/">
+  <link rel="stylesheet" href="../../../site.css?v=20260907">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker"><a href="../../">Research</a> · <a href="../">Capture</a> · Part 1</p>
+    <h2>SetWindowDisplayAffinity: mechanism &amp; detection</h2>
+    <p class="article-meta">
+      <span>Hidden windows &amp; anti-capture series</span>
+      <span>Tools: IDA · CE · Hawkeye Community · Cursor MCP</span>
+    </p>
+
+    <nav class="guide-nav" aria-label="On this page">
+      <strong>Contents</strong>
+      <ol>
+        <li><a href="#background">Background &amp; series</a></li>
+        <li><a href="#win32k">win32k chain</a></li>
+        <li><a href="#dwm">DWM leads</a></li>
+        <li><a href="#has-protected">HasProtectedContent</a></li>
+        <li><a href="#memory">Memory validation</a></li>
+        <li><a href="#detection">Detection</a></li>
+        <li><a href="#opensource">Open-source implementation</a></li>
+      </ol>
+    </nav>
+
+    <article class="guide-step" id="background">
+      <strong>1. Background &amp; series</strong>
+      <p>
+        <code>SetWindowDisplayAffinity</code> (typically with <code>WDA_EXCLUDEFROMCAPTURE</code>)
+        is a well-known way to keep a window visible on the desktop while excluding it from
+        most screen-capture and recording APIs.
+      </p>
+      <p>This series has three parts. This article is part 1:</p>
+      <ul class="article-list">
+        <li><strong>Part 1 (this page)</strong>: <code>SetWindowDisplayAffinity</code> — mechanism &amp; detection</li>
+        <li>Part 2: Visual-layer hiding — mechanism &amp; detection</li>
+        <li>Part 3: BitBlt-style &ldquo;super screenshot&rdquo; approach</li>
+      </ul>
+    </article>
+
+    <article class="guide-step" id="win32k">
+      <strong>2. win32k chain</strong>
+      <p>
+        The user-mode API enters the kernel at
+        <code>win32kfull!NtUserSetWindowDisplayAffinity</code>; core logic lives in
+        <code>SetDisplayAffinity</code>. Simplified flow:
+      </p>
+      <pre class="flow-block">NtUserSetWindowDisplayAffinity
+  └─ SetDisplayAffinity
+       ├─ ComposeWindowIfNeeded
+       ├─ InternalSetProp / InternalRemoveProp("SysDispAffinity")
+       └─ ChangeWindowTreeProtection
+            └─ ProtectWindowBitmap
+                 ├─ ChangeWindowBitmapOwner
+                 └─ GreProtectSpriteContent
+                      └─ DwmAsyncUpdateSprite → dwm.exe</pre>
+      <p>
+        <code>DwmAsyncUpdateSprite</code> ultimately delivers an LPC message to the
+        <code>dwm.exe</code> process. Aside from updating the <code>SysDispAffinity</code>
+        property on the window (tagWND), other kernel-side changes are relatively few.
+        Property atom indices also shift between Windows versions, so detecting hidden windows
+        from kernel state alone tends to be less stable and less portable.
+      </p>
+      <p>
+        Study of <code>dwmcore.dll</code> shows separate paths for capture and direct display,
+        corresponding to <code>CCaptureRenderTarget</code> and <code>CDDisplayRenderTarget</code>
+        respectively. With further observation, the split is clear: for anti-capture, the
+        <code>dwm.exe</code> process owns the full logic; the kernel plays a limited role.
+      </p>
+    </article>
+
+    <article class="guide-step" id="dwm">
+      <strong>3. DWM leads</strong>
+      <p>
+        Whether a window is hidden from capture should, in principle, show up in DWM
+        <code>CCaptureRenderTarget</code> composed output.
+        <code>dwm.exe</code> loads many modules; our primary suspects are
+        <code>dwm.exe</code>, <code>dwmcore.dll</code>, <code>dwmredir.dll</code>, and
+        <code>uDWM.dll</code> (we search these first below) &mdash; the names all carry
+        <code>dwm</code>.
+      </p>
+      <p>
+        In Hawkeye Community, attach to <code>dwm.exe</code> with
+        <code>!probe -pid:&lt;dwm_pid&gt;</code>, then search for <code>protect</code> across the
+        four modules below:
+        <code>!probe -find:protect -mod:dwmcore,dwmredir,udwm,dwm</code>
+      </p>
+      <figure class="figure">
+        <img src="images/probe-protect-search.png" alt="Hawkeye !probe search for protect in DWM modules, listing IsProtected and HasProtectedContent symbols.">
+        <figcaption>Figure 1. <code>!probe -find:protect</code> — many protection-related symbols; below we focus on <code>CWindowContext</code>.</figcaption>
+      </figure>
+      <p>Strongest candidates in <code>dwmredir</code> — two functions tied to window content:</p>
+      <ul class="article-list">
+        <li><code>CWindowContext::HasProtectedContent</code></li>
+        <li><code>CWindowContext::NotifyProtectionChange</code></li>
+      </ul>
+      <p>
+        The names are explicit: test whether window content is protected, and notify the
+        composition pipeline when protection changes. DWM also exposes many
+        <code>IsProtected</code> / <code>SetHardwareProtection</code> symbols worth
+        following separately.
+      </p>
+    </article>
+
+    <article class="guide-step" id="has-protected">
+      <strong>4. What HasProtectedContent does</strong>
+      <p>
+        Disassembly of <code>dwmredir!CWindowContext::HasProtectedContent</code> is straightforward:
+      </p>
+      <figure class="figure">
+        <img src="images/has-protected-content-asm.png" alt="HasProtectedContent loads dword at object offset 0x114, shifts right 6, ANDs with 1.">
+        <figcaption>Figure 2. Load <code>[rcx+0x114]</code>, <code>SHR 6</code>, <code>AND 1</code> — i.e. test <strong>bit 6 (0x40)</strong> of that DWORD.</figcaption>
+      </figure>
+      <p>
+        So <code>CWindowContext</code> carries a flag DWORD at offset <code>+0x114</code>;
+        bit 6 marks protected content (consistent with anti-capture semantics).
+      </p>
+      <p>
+        When locating <code>CWindowContext</code> instances, note the class has
+        <strong>two vftables</strong>. Use the one for <code>IDwmWindow</code>
+        (example from our test machine below):
+      </p>
+      <figure class="figure">
+        <img src="images/probe-vftable-find.png" alt="!probe finds two CWindowContext vftables; IDwmWindow at 0x7FFAF582A000.">
+        <figcaption>Figure 3. <code>!probe -find:CWindowContext,vftable -mod:dwmredir</code> — locate the <code>IDwmWindow</code> vftable.</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="images/vftable-idwmwindow.png" alt="Memory Viewer at CWindowContext IDwmWindow vftable address in dwmredir.dll.">
+        <figcaption>Figure 4. Vftable lives in <code>dwmredir.dll</code> — use it to scan DWM heap objects.</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step" id="memory">
+      <strong>5. Memory validation</strong>
+      <p>
+        Experiment: call <code>SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)</code> on a window,
+        then search for that HWND value in <code>dwm.exe</code> with Cheat Engine to land on the
+        matching <code>CWindowContext</code> object.
+      </p>
+      <figure class="figure">
+        <img src="images/cwindowcontext-memory.png" alt="CWindowContext memory: vftable at +0, 0x40 protection bit at +0x114, HWND and PID fields.">
+        <figcaption>Figure 5. Layout check: first 8 bytes = vftable; at <code>+0x114</code>, value <code>0xC7</code> has bit 6 (<code>0x40</code>) set; cross-check HWND and owning PID.</figcaption>
+      </figure>
+      <table class="article-table">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Example</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>vftable</td>
+            <td><code>0x00007FFAF582A000</code></td>
+            <td><code>CWindowContext</code> (<code>IDwmWindow</code>) vtable pointer</td>
+          </tr>
+          <tr>
+            <td>Protection flag</td>
+            <td><code>+0x114</code>, bit 6 = 1</td>
+            <td>Matches <code>HasProtectedContent</code> disassembly</td>
+          </tr>
+          <tr>
+            <td>Window kind</td>
+            <td><code>0x1</code> / <code>0x2</code> / <code>0x4</code></td>
+            <td>DWM internal type enum (rough guess): <code>0x1</code> console-class, <code>0x2</code> GUI window (frameless / custom title bar), <code>0x4</code> GUI window</td>
+          </tr>
+          <tr>
+            <td>HWND / PID</td>
+            <td colspan="2">Window handle and owning process ID</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        First 8 bytes of the object are the vftable pointer. Exact offsets move between
+        Windows builds, but the combination <strong>vftable + protection bit + HWND/PID</strong>
+        has been stable enough across versions we tested to build detection around.
+      </p>
+    </article>
+
+    <article class="guide-step" id="detection">
+      <strong>6. Detection</strong>
+      <p>
+        Window composition for capture exclusion lives mainly in the DWM process and is
+        largely decoupled from the kernel path, so scanning <code>dwm.exe</code> is a practical
+        detection surface.
+      </p>
+      <p>
+        A workable scheme mirrors the manual CE steps above, but automates layout discovery:
+      </p>
+      <ul class="article-list">
+        <li>Resolve the <code>IDwmWindow</code> vtable address from <code>dwmredir.dll</code> symbols (PDB).</li>
+        <li>Scan <code>dwm.exe</code> read-write regions for pointers equal to that vtable.</li>
+        <li>
+          During <strong>calibration</strong>, enable anti-capture on a known window — Hawkeye
+          uses its own main window via <code>SetWindowDisplayAffinity</code> — then select the
+          matching object by vtable, protection bit 6, window kind, HWND, and owning PID.
+        </li>
+        <li>Record object-relative offsets for flags, kind, HWND, and PID; reuse them on later scans.</li>
+      </ul>
+      <p>
+        Absolute field offsets (such as <code>+0x114</code> for the flag DWORD on our test build)
+        change between Windows versions. Anchoring on the vtable and calibrating once keeps the
+        scanner portable. In the Community tool, window kind is filtered to <code>0x2</code> and
+        <code>0x4</code> during scans even though <code>0x1</code> may appear in memory dumps.
+      </p>
+    </article>
+
+    <article class="guide-step" id="opensource">
+      <strong>7. Open-source implementation</strong>
+      <p>
+        The detection approach in this article is implemented in <strong>Hawkeye Community</strong>:
+        <code>!hidden_windows</code> (run <code>-init</code> first) and the staging command
+        <code>!hidden_windows_sim</code>. The Community build anchors on the
+        <code>CWindowContext</code> / <code>IDwmWindow</code> vtable in <code>dwmredir.dll</code>,
+        calibrates relative offsets for flags, kind, HWND, and PID, then scans <code>dwm.exe</code>
+        memory.
+      </p>
+      <p>
+        Source:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a><br>
+        Binaries:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">GitHub Releases (latest)</a>
+      </p>
+      <p>
+        <strong>Next in the series:</strong> Visual-layer hiding — a more flexible and covert
+        anti-capture approach.
+      </p>
+      <p class="guide-up"><a href="#background">↑ Contents</a></p>
+    </article>
+
+    <p class="article-nav">
+      <a href="../">← Capture series</a>
+      <span style="color: var(--muted);">Part 2 (planned)</span>
+    </p>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>

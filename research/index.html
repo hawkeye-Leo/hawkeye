@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Research — Hawkeye | Windows kernel &amp; DWM notes</title>
+  <meta name="description" content="Hawkeye research notes: window capture exclusion, DWM composition, and detection — mechanism and observables.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/">
+  <link rel="stylesheet" href="../site.css?v=20260907">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../">Community</a>
+        <a href="../lab/">Lab</a>
+        <a class="active" href="./">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker">Research notes · mechanism &amp; detection</p>
+    <h2>Research notes</h2>
+    <p class="lead">
+      Analysis of Windows composition, capture exclusion, and related detection paths.
+      Each article separates <strong>how it works</strong> from <strong>what you can observe</strong>
+      so you can reproduce and verify on systems you administer.
+      Primary bench: <strong>Hawkeye Community</strong>, plus IDA and Cheat Engine where noted.
+    </p>
+
+    <div class="note">
+      Authorized research only. Do not use against third-party software, games,
+      or systems you do not administer.
+    </div>
+
+    <section>
+      <h3>Series</h3>
+      <div class="research-series-list">
+        <a class="research-series-card" href="capture/">
+          <span class="series-meta">Capture · 3 planned</span>
+          <h3>Hidden windows &amp; anti-capture</h3>
+          <p>
+            <code>SetWindowDisplayAffinity</code>, DWM Visual-layer hiding, and BitBlt-style
+            &ldquo;super screenshot&rdquo; approach — from win32k through <code>dwm.exe</code>.
+          </p>
+        </a>
+        <article class="research-series-card" style="opacity: 0.72; pointer-events: none;">
+          <span class="series-meta">Planned</span>
+          <h3>More topics</h3>
+          <p>Future series (memory access, injection surfaces, etc.) will be added here.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h3>Latest</h3>
+      <ul class="article-list">
+        <li>
+          <a href="capture/01-display-affinity/">Part 1: <code>SetWindowDisplayAffinity</code> — mechanism &amp; DWM detection</a>
+          — win32k call chain, <code>CWindowContext</code> protection bit, memory validation
+        </li>
+      </ul>
+    </section>
+
+    <footer>
+      <a href="../">Community</a>
+      · <a href="../lab/">Lab</a>
+      · Support: <a href="mailto:hawkeye18485@gmail.com">hawkeye18485@gmail.com</a>
+    </footer>
+  </main>
+</body>
+</html>

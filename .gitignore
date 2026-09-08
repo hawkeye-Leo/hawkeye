@@ -7,3 +7,6 @@ _upload_banner.py
 assets/_banner_snap.png
 assets/brand-banner@2x.png
 assets/brand-banner-2x.png
+
+# Chinese articles for Kanxue — local only, not published on GitHub Pages
+_kanxue/
