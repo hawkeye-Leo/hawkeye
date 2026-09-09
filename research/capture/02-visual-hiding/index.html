@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 2: Visual-layer hiding &mdash; Hawkeye Research</title>
+  <meta name="description" content="DWM global Visual tree, dwmcore CVisual::HasProtectedContent, vtable heap scan, HWND/PID attribution, and detection limits.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/02-visual-hiding/">
+  <link rel="stylesheet" href="../../../site.css?v=20260909">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker"><a href="../../">Research</a> · <a href="../">Capture</a> · Part 2</p>
+    <h2>Visual-layer hiding: mechanism &amp; detection</h2>
+    <p class="article-meta">
+      <span>Hidden windows &amp; anti-capture series</span>
+      <span>Tools: IDA · CE · Hawkeye · Cursor MCP</span>
+    </p>
+    <nav class="guide-nav" aria-label="On this page">
+      <strong>Contents</strong>
+      <ol>
+        <li><a href="#background">Background &amp; series</a></li>
+        <li><a href="#visual">What is a Visual?</a></li>
+        <li><a href="#hijack">Cross-process Visual model</a></li>
+        <li><a href="#cvisual">CVisual hiding &amp; HasProtectedContent</a></li>
+        <li><a href="#opensource">Open-source note</a></li>
+      </ol>
+    </nav>
+
+    <article class="guide-step" id="background">
+      <strong>1. Background &amp; series</strong>
+      <p>This series has three parts. This article is part 2:</p>
+      <ul class="article-list">
+        <li><a href="../01-display-affinity/">Part 1</a>: <code>SetWindowDisplayAffinity</code> &mdash; mechanism &amp; detection</li>
+        <li><strong>Part 2 (this page)</strong>: Visual-layer hiding &mdash; mechanism &amp; detection</li>
+        <li><a href="../03-readback-mode/">Part 3</a>: BitBlt-style &ldquo;super screenshot&rdquo; approach</li>
+      </ul>
+      <p>
+        Unlike DisplayAffinity, that path centers on the <code>CWindowContext</code> object; Visual-layer
+        details live on composition nodes in <code>dwmcore</code> (<code>CVisual</code>).
+      </p>
+    </article>
+
+    <article class="guide-step" id="visual">
+      <strong>2. What is a Visual?</strong>
+      <p>Before diving in, I think it&rsquo;s worth a quick intro to what a Visual is:</p>
+      <p>
+        DWM maintains a global Visual tree in <code>dwm.exe</code> / <code>dwmcore.dll</code>. Each
+        <code>CVisual</code> on the tree is a composition node; many top-level windows map to a subtree
+        in this global Visual tree &mdash; the subtree root is often tied to an <code>HWND</code>, and
+        child visuals underneath describe what that window looks like on the desktop. DWM blends these
+        visuals into the final desktop frame based on window Z-order, node hierarchy, occlusion, and
+        various flags. What you see on the monitor is essentially the result of how this global Visual
+        tree is merged and trimmed.
+      </p>
+      <p>So the smallest unit DWM actually manages is the Visual, not the window.</p>
+    </article>
+
+    <article class="guide-step" id="hijack">
+      <strong>3. A fragile model: cross-process Visuals &amp; window_hijack</strong>
+      <p>
+        As above, DWM cares more about Visuals than about which window or process owns them.
+        The <code>window_hijack</code> source shows that fusing a Visual you created in one
+        process into another process&rsquo;s window boils down to just a few checks. The logic lives in:
+      </p>
+      <pre class="flow-block">win32kfull!NtUserCreateDCompositionHwndTarget
+  └─ TestWindowForCompositionTarget</pre>
+      <p>
+        Once past that gate, the system keeps working happily as if nothing happened &mdash; it
+        never re-validates whether a Visual is abnormal.
+      </p>
+      <aside class="insight-box article-bridge">
+        <p>
+          At this point, where a Visual is drawn hardly matters &mdash; they all look the same.
+          But if that Visual carries anti-capture protection, things get tricky. As a game
+          anti-cheat engineer you might see cheat overlay boxes drawn on the game window yet
+          never find the draw source.
+        </p>
+      </aside>
+    </article>
+
+    <article class="guide-step" id="cvisual">
+      <strong>4. CVisual hiding &amp; HasProtectedContent</strong>
+      <p>
+        After digging into <code>dwmcore</code>, we find that each Visual maps to a
+        <code>CVisual</code> object. <code>CVisual</code> derives from <code>CResource</code>.
+        <code>CWindowNode</code> is a subclass of <code>CVisual</code> used for subtree-root
+        visuals bound to a window handle.
+      </p>
+      <p>Drawing on part 1, we try:</p>
+      <figure class="figure">
+        <img src="images/probe-has-protect-search.png" alt="Hawkeye !probe joint search for has,protect; HasProtectedContent hits in both dwmredir and dwmcore.">
+        <figcaption>Figure 1. <code>!probe -find:has,protect -mod:dwmcore,dwmredir</code> &mdash; the same name appears in both <code>dwmredir</code> and <code>dwmcore</code>.</figcaption>
+      </figure>
+      <p>
+        As shown above, a Hawkeye joint search finds not only a match in <code>dwmredir</code>,
+        but also an equally eye-catching namesake in <code>dwmcore</code>:
+      </p>
+      <ul class="article-list">
+        <li><code>CWindowContext::HasProtectedContent</code> (<code>dwmredir</code>)</li>
+        <li><code>CVisual::HasProtectedContent</code> (<code>dwmcore</code>)</li>
+      </ul>
+      <p>Microsoft really seems committed to keeping things out in the open.</p>
+      <p>
+        Disassembly of <code>dwmcore!CVisual::HasProtectedContent</code> is straightforward:
+      </p>
+      <figure class="figure">
+        <img src="images/cvisual-has-protected-content-asm.png" alt="CVisual::HasProtectedContent reads rcx+0x6A, shifts right 7, returns.">
+        <figcaption>Figure 2. Load <code>[rcx+0x6A]</code>, <code>SHR 7</code>, return &mdash; i.e. test <strong>bit 7</strong> of that byte.</figcaption>
+      </figure>
+      <p>
+        Drawing on part 1, it is easy to guess that bit 7 at offset <code>+0x6A</code> on a
+        <code>CVisual</code> object is the key flag.
+      </p>
+      <p>
+        When locating <code>CVisual</code> instances, the first 8 bytes should theoretically be
+        the <code>CVisual</code> vtable pointer (example from our test machine below):
+      </p>
+      <figure class="figure">
+        <img src="images/probe-cvisual-vftable.png" alt="!probe locates CVisual vftable; example address 0x7FF91D4F7F78 on test machine.">
+        <figcaption>Figure 3. <code>!probe -find:cvisual,vftable -mod:dwmcore</code> &mdash; locate the <code>CVisual</code> vftable.</figcaption>
+      </figure>
+      <p>On our test machine the vtable pointer is at <code>0x7FF91D4F7F78</code>.</p>
+      <figure class="figure">
+        <img src="images/cvisual-vftable-memory.png" alt="Memory Viewer showing CVisual vftable inside dwmcore.dll.">
+        <figcaption>Figure 4. Vftable address in <code>dwmcore.dll</code> &mdash; use it to scan objects on the DWM heap.</figcaption>
+      </figure>
+      <p>
+        Searching for that value in CE confirms that the first 8 bytes of a <code>CVisual</code>
+        object are indeed its vtable pointer, and that bit 7 at offset <code>+0x6A</code> is the
+        anti-capture protection flag.
+      </p>
+      <p>
+        That still is not quite enough. In part 1 we got PID, window handle, and even window
+        size (with a bit more digging). A Visual gives you less out of the box &mdash; or if you
+        want more, you need to plan for compatibility work.
+      </p>
+      <div class="guide-sub">
+        <p class="guide-q">Can we get a window handle from a Visual?</p>
+        <p>
+          Yes. As noted above, if the Visual is a subtree root you can read it directly &mdash; see
+          <code>CVisual::GetHwnd</code>. If it is a child node, you have to walk up to a parent
+          until one of them is a subtree root, then call <code>CVisual::GetHwnd</code> for the
+          window handle. Compatibility issues here are real.
+        </p>
+      </div>
+
+      <div class="guide-sub">
+        <p class="guide-q">Can we get the owning process PID from a Visual?</p>
+        <p>Yes. Since <code>CVisual</code> derives from <code>CResource</code>:</p>
+        <figure class="figure">
+          <img src="images/probe-get-owning-processid.png" alt="!probe search for GetOwningProcessId hits CResource and CWindowNode in dwmcore.">
+          <figcaption>Figure 5. <code>!probe -find:processid,own -mod:dwmcore</code> &mdash; locate <code>CResource::GetOwningProcessId</code>.</figcaption>
+        </figure>
+        <p>
+          Disassembly of <code>dwmcore!CResource::GetOwningProcessId</code>:
+        </p>
+        <figure class="figure">
+          <img src="images/cresource-get-owning-processid-asm.png" alt="CResource::GetOwningProcessId reads handle at visual+0x38, PID at handle+0x1C.">
+          <figcaption>Figure 6. Handle at <code>visual+0x38</code>; when valid, PID at <code>handle+0x1C</code>.</figcaption>
+        </figure>
+        <p>
+          The logic is straightforward. For compatibility, resolve offsets from instructions
+          dynamically rather than hard-coding them.
+        </p>
+      </div>
+      <p>
+        Once a suspicious Visual maps to a PID, the full investigation path is complete.
+      </p>
+    </article>
+
+    <article class="guide-step" id="opensource">
+      <strong>5. Open-source note</strong>
+      <p>
+        Part 1&rsquo;s DisplayAffinity detection is fully open-sourced in Hawkeye Community
+        (<code>!hidden_windows</code>). Visual-layer detection is still a narrower research topic,
+        and the corresponding approach is not open-sourced in Community yet. The toolchain used
+        in this article &mdash;
+        <code>!probe</code>, symbol loading, and memory analysis &mdash; remains available in
+        Community for readers who want to reproduce the steps above on their own machine.
+      </p>
+      <p>
+        <strong>Next in the series:</strong>
+        <a href="../03-readback-mode/">BitBlt &ldquo;super screenshot&rdquo; approach</a>
+        &mdash; already open-sourced in Hawkeye Community.
+      </p>
+      <p>
+        Source:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a><br>
+        Prebuilt:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">GitHub Releases (latest)</a>
+      </p>
+      <p class="guide-up"><a href="#background">&uarr; Contents</a></p>
+    </article>
+
+    <p class="article-nav">
+      <a href="../01-display-affinity/">&larr; Part 1</a>
+      <a href="../03-readback-mode/">Part 3 &rarr;</a>
+    </p>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>

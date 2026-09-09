@@ -935,6 +935,50 @@ footer {
 
 .insight-box p:last-child { margin-bottom: 0; }
 
+.guide-step .insight-box.article-bridge {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.guide-step .insight-box.article-bridge p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.65;
+}
+
+.guide-sub {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.guide-sub:first-of-type {
+  margin-top: 0.25rem;
+}
+
+.guide-step .guide-q {
+  margin: 0 0 0.45rem;
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.article-intro {
+  margin: 0 0 1.25rem;
+}
+
+.article-intro .lead {
+  margin: 0 0 0.65rem;
+  color: var(--ink);
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.article-intro .lead-note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
 .flow-block {
   display: block;
   margin: 0.85rem 0 1rem;

@@ -42,21 +42,21 @@
           win32kfull chain → DWM <code>CWindowContext</code> → memory signatures &amp; detection limits
         </li>
         <li>
-          <strong>Part 2: Visual-layer hiding (planned)</strong>
+          <strong><a href="02-visual-hiding/">Part 2: Visual-layer hiding &mdash; mechanism &amp; detection</a></strong>
           <br>
-          Frameless / custom chrome: protection on CVisual instead of HWND 0x40
+          <code>dwmcore!CVisual</code>, <code>HasProtectedContent</code>, heap vtable scan &amp; PID attribution
         </li>
         <li>
-          <strong>Part 3: BitBlt-style &ldquo;super screenshot&rdquo; approach (planned)</strong>
+          <strong><a href="03-readback-mode/">Part 3: IsScreenReadBack &amp; dual-buffer capture</a></strong>
           <br>
-          How raw BitBlt reads relate to DWM composition and DisplayAffinity
+          <code>CComposition + 0x196A</code>, readback mode, Lab experiments, BitBlt vs DWM capture
         </li>
       </ul>
     </section>
 
     <p class="article-nav">
       <a href="../">← All research</a>
-      <a href="01-display-affinity/">Part 1 →</a>
+      <a href="02-visual-hiding/">Part 2 →</a>
     </p>
 
     <footer>
