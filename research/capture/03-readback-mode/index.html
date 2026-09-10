@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 3: BitBlt &ldquo;super screenshot&rdquo; &mdash; Hawkeye Research</title>
+  <meta name="description" content="BitBlt to DWM RenderForCapture, display vs capture paths, g_pComposition+0x196A readback flag, and Lab validation.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/03-readback-mode/">
+  <link rel="stylesheet" href="../../../site.css?v=20260909">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker"><a href="../../">Research</a> · <a href="../">Capture</a> · Part 3</p>
+    <h2>BitBlt &ldquo;super screenshot&rdquo; (DWM)</h2>
+    <p class="article-meta">
+      <span>Hidden windows &amp; anti-capture series</span>
+      <span>Tools: IDA · CE · Hawkeye Lab · Cursor MCP</span>
+    </p>
+
+    <nav class="guide-nav" aria-label="On this page">
+      <strong>Contents</strong>
+      <ol>
+        <li><a href="#background">Background &amp; series</a></li>
+        <li><a href="#bitblt">BitBlt &amp; DWM</a></li>
+        <li><a href="#dual-path">Display vs capture</a></li>
+        <li><a href="#breakthrough">Analysis &amp; breakthrough</a></li>
+        <li><a href="#super-screenshot">Implementation walkthrough</a></li>
+        <li><a href="#lab">Hawkeye Lab</a></li>
+        <li><a href="#opensource">Open-source implementation</a></li>
+      </ol>
+    </nav>
+
+    <article class="guide-step" id="background">
+      <strong>1. Background &amp; series</strong>
+      <p>This series has three parts. This article is part 3:</p>
+      <ul class="article-list">
+        <li><a href="../01-display-affinity/">Part 1</a>: <code>SetWindowDisplayAffinity</code> &mdash; mechanism &amp; detection</li>
+        <li><a href="../02-visual-hiding/">Part 2</a>: Visual-layer hiding &mdash; mechanism &amp; detection</li>
+        <li><strong>Part 3 (this page)</strong>: BitBlt-style &ldquo;super screenshot&rdquo; approach</li>
+      </ul>
+      <p>Parts 1 and 2 covered anti-capture at the window level and on the Visual layer; this part leaves detection behind and explores a BitBlt capture-path &ldquo;super screenshot&rdquo; approach that can bypass those protections.</p>
+    </article>
+
+    <article class="guide-step" id="bitblt">
+      <strong>2. BitBlt &amp; DWM</strong>
+      <p>Simplified flow:</p>
+      <pre class="flow-block">gdi32!BitBlt
+  └─ win32kfull!NtGdiBitBlt
+       └─ DwmSyncCaptureSurfaceBits
+            └─ LpcSendWaitReceivePort → dwm.exe
+                 └─ dwmcore!CaptureBitsResponse::RenderForCapture
+                      └─ return to caller</pre>
+      <p>Like DisplayAffinity, a BitBlt call still enters the kernel first, then sends an LPC message to <code>dwm.exe</code>. Once <code>dwm.exe</code> receives it, execution lands in <code>dwmcore!CaptureBitsResponse::RenderForCapture</code>, then returns the same way.</p>
+      <p>In other words, a BitBlt screenshot is not decided in the kernel &mdash; it depends on DWM. More bluntly, <code>dwmcore.dll</code> is in charge.</p>
+    </article>
+
+    <article class="guide-step" id="dual-path">
+      <strong>3. Display vs capture</strong>
+      <p>From analysis, display and capture use separate RenderTargets but one shared pipeline: different surfaces, same global Visual tree and composition logic.</p>
+      <p>Normal display path:</p>
+      <pre class="flow-block">CDDisplayRenderTarget::RenderAndPresent
+  → BeginFrame(display RT)
+  → DrawVisualTree
+  → Present</pre>
+      <p>Capture path (inside <code>RenderForCapture</code>):</p>
+      <pre class="flow-block">BeginFrame(captureRenderTarget)
+  → DrawVisualTree
+  → read pixels from capturebits scratch
+  → section back to kernel</pre>
+    </article>
+
+    <article class="guide-step" id="breakthrough">
+      <strong>4. Analysis &amp; breakthrough</strong>
+      <p>IDA analysis of <code>CaptureBitsResponse::RenderForCapture</code> &mdash; simplified call order:</p>
+      <pre class="flow-block">CaptureBitsResponse::RenderForCapture
+  ├─ CComposition::ShowHideCursors(0)       (Hide cursor Visuals; CExcludeVisualReference::Hide)
+  ├─ CDrawingContext::Create                (heap AllocClear; RT not bound yet)
+  └─ one frame
+       ├─ CDrawingContext::BeginFrame       (pass capture IDeviceTarget; bind RT)
+       ├─ CDrawingContext::DrawVisualTree    ← shared by capture &amp; display
+       └─ CDrawingContext::EndFrame
+  (then RestoreCursors; clear g_pComposition+0x196A)</pre>
+      <p><code>DrawVisualTree</code> is the key step: it draws every Visual that should appear; both capture and display paths pass through it.</p>
+      <div class="guide-sub">
+        <p class="guide-q">Readback flag: g_pComposition + 0x196A</p>
+        <pre class="flow-block">enter capture:  [g_pComposition+0x196A] ← 1
+  BeginFrame → DrawVisualTree → EndFrame
+leave capture:  [g_pComposition+0x196A] ← 0</pre>
+        <p>In <code>RenderForCapture</code>, DWM writes <code>1</code> to <code>g_pComposition + 0x196A</code> before capture begins. The matching assembly:</p>
+        <figure class="figure">
+          <img src="images/render-for-capture-196a-write.png" alt="RenderForCapture: mov r15d, 1; CDrawingContext::Create; mov [rax+196Ah], r15b.">
+          <figcaption>Figure 1. Enter capture &mdash; after <code>mov r15d, 1</code>, store to <code>[g_pComposition+196Ah]</code>.</figcaption>
+        </figure>
+        <p>When capture finishes, the flag is cleared to <code>0</code> (<code>r13b</code> is 0 here):</p>
+        <figure class="figure">
+          <img src="images/render-for-capture-196a-clear.png" alt="RenderForCapture teardown: mov [rcx+196Ah], r13b.">
+          <figcaption>Figure 2. Leave capture &mdash; write <code>[g_pComposition+196Ah] ← 0</code>, then <code>RestoreCursors</code>.</figcaption>
+        </figure>
+        <p>The whole frame is wrapped by this write/clear pair &mdash; the main breakthrough.</p>
+      </div>
+      <div class="guide-sub">
+        <p class="guide-q">Further cross-check</p>
+        <p>A global IDA search for <code>196Ah</code> leads to readback-related code; on Win11 and similar builds the PDB names it <code>IsScreenReadBack()</code>:</p>
+        <figure class="figure">
+          <img src="images/is-screen-readback-asm.png" alt="IsScreenReadBack disassembly: mov al, [rcx+196Ah]; retn.">
+          <figcaption>Figure 3. <code>CComposition::IsScreenReadBack</code> &mdash; load <code>[rcx+196Ah]</code> and return; i.e. test the readback / capture semantic flag.</figcaption>
+        </figure>
+        <p>The ReadBack in the name is essentially asking &ldquo;are we in readback/capture state right now?&rdquo; That symbol is often missing on Win10; the machine analyzed here is Win11, which was convenient.</p>
+      </div>
+      <p><strong>Lab validation</strong></p>
+      <p>Static analysis only gets us this far; the real test is in a running <code>dwm.exe</code>: at the site marked in the red box in Figure 4, change the write from <code>1</code> to <code>0</code> and see whether a normal BitBlt can still capture protected windows.</p>
+      <p>Attach to <code>dwm.exe</code> with Hawkeye Lab and patch the Figure 1 site &mdash; one byte, changing the immediate in <code>mov r15d, 1</code> from <code>01</code> to <code>00</code>:</p>
+      <figure class="figure">
+        <img src="images/lab-patch-mov-r15d-1-to-0.png" alt="Hawkeye Lab Memory Viewer: Edit Memory changing 01 to 00 in mov r15d,1.">
+        <figcaption>Figure 4. Hawkeye Lab &mdash; turn <code>mov r15d, 1</code> into <code>mov r15d, 0</code> (immediate <code>01</code> &rarr; <code>00</code>).</figcaption>
+      </figure>
+      <p>Trigger a normal BitBlt capture afterward &mdash; every anti-capture window and Visual shows up in the screenshot.</p>
+      <p><strong>Interesting side effect</strong></p>
+      <p>Under normal conditions the flag only lives for one capture frame: <code>RenderForCapture</code> sets <code>g_pComposition + 0x196A</code> to <code>1</code> before drawing, then clears it to <code>0</code> when the frame ends.</p>
+      <p>The reverse experiment is stranger: leave the capture code alone, but pin that byte to <code>1</code> in memory so DWM stays in readback semantics. Anti-capture windows disappear from the live desktop &mdash; not transparency, but the display path skipping protected content because <code>DrawVisualTree</code> reads the same flag. Trigger another capture and let the normal set/clear cycle run; normal behavior returns.</p>
+    </article>
+
+    <article class="guide-step" id="super-screenshot">
+      <strong>5. Implementation walkthrough</strong>
+      <p>The Lab immediate patch proves the idea; what you need in practice is a repeatable, automatable workflow. Patch the readback writer in <code>dwm.exe</code> remotely before the BitBlt call, so <code>g_pComposition + 0x196A</code> stays <code>0</code> for that capture frame; restore the bytes after the BitBlt call returns. No injection into <code>dwm.exe</code>, no hooks &mdash; only a very short-lived code patch.</p>
+      <p>This works for both Part 1 DisplayAffinity and Part 2 Visual hiding: capture-path protection is gated on readback semantics. Four steps:</p>
+      <ol class="article-list">
+        <li><strong>Locate the patch site.</strong> In <code>dwmcore.dll</code>&rsquo;s <code>RenderForCapture</code>, find the store to <code>[g_pComposition+196Ah]</code>. On the Win11 build analyzed here it is <code>mov [rax+196Ah], r15b</code> (Figure 1, preceded by <code>mov r15d, 1</code>). Encoding varies by build; scan for the pattern instead of hard-coding an absolute address.</li>
+        <li><strong>Rewrite the instruction.</strong> Turn the &ldquo;write <code>1</code>&rdquo; into &ldquo;write <code>0</code>&rdquo;. Either change the store to <code>mov [rax+196Ah], 0</code>, or flip the immediate in <code>mov r15d, 1</code> (<code>01</code> &rarr; <code>00</code>).</li>
+        <li><strong>Take a normal screenshot.</strong> Call BitBlt.</li>
+        <li><strong>Restore the patch.</strong> Write the original bytes back.</li>
+      </ol>
+    </article>
+
+    <article class="guide-step" id="lab">
+      <strong>6. Hawkeye Lab</strong>
+      <p>Three articles, one surface: DisplayAffinity, Visual hiding, and the BitBlt readback bypass. For game anti-cheat engineers the grind is rarely a single trick &mdash; it is whether the full loop &mdash; analyze behavior, locate code, refresh signatures, ship detection &mdash; can run fast, reliably, and again and again.</p>
+      <p><strong>Hawkeye Lab</strong> is built for that workflow: industrial, repeatable anti-cheat instead of groping across disconnected tools. PDF reports land in one shot with findings and assessment dimensions together, ready to reference and act on.</p>
+      <p><a href="https://hawkeye-leo.github.io/hawkeye/lab/">About Hawkeye Lab &rarr;</a></p>
+    </article>
+
+    <article class="guide-step" id="opensource">
+      <strong>7. Open-source implementation</strong>
+      <p>The code for this part is open-sourced.</p>
+      <p>
+        Source:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a><br>
+        Binaries:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">GitHub Releases (latest)</a>
+      </p>
+      <p class="guide-up"><a href="#background">&uarr; Contents</a></p>
+    </article>
+
+    <p class="article-nav">
+      <a href="../02-visual-hiding/">&larr; Part 2</a>
+      <a href="../">Capture series</a>
+    </p>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>
