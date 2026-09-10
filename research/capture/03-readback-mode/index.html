@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Part 3: BitBlt &ldquo;super screenshot&rdquo; &mdash; Hawkeye Research</title>
-  <meta name="description" content="BitBlt to DWM RenderForCapture, display vs capture paths, g_pComposition+0x196A readback flag, and Lab validation.">
+  <meta name="description" content="BitBlt to DWM RenderForCapture, Display vs Capture paths, g_pComposition+0x196A readback flag, and Lab validation.">
   <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/03-readback-mode/">
   <link rel="stylesheet" href="../../../site.css?v=20260909">
 </head>
@@ -38,7 +38,7 @@
       <ol>
         <li><a href="#background">Background &amp; series</a></li>
         <li><a href="#bitblt">BitBlt &amp; DWM</a></li>
-        <li><a href="#dual-path">Display vs capture</a></li>
+        <li><a href="#dual-path">Display vs Capture</a></li>
         <li><a href="#breakthrough">Analysis &amp; breakthrough</a></li>
         <li><a href="#super-screenshot">Implementation walkthrough</a></li>
         <li><a href="#lab">Hawkeye Lab</a></li>
@@ -71,11 +71,11 @@
     </article>
 
     <article class="guide-step" id="dual-path">
-      <strong>3. Display vs capture</strong>
-      <p>From analysis, display and capture use separate RenderTargets but one shared pipeline: different surfaces, same global Visual tree and composition logic.</p>
-      <p>Normal display path:</p>
+      <strong>3. Display vs Capture</strong>
+      <p>From analysis, Display and Capture use separate RenderTargets but one shared pipeline: different surfaces, same global Visual tree and composition logic.</p>
+      <p>Normal Display path:</p>
       <pre class="flow-block">CDDisplayRenderTarget::RenderAndPresent
-  → BeginFrame(display RT)
+  → BeginFrame(Display RT)
   → DrawVisualTree
   → Present</pre>
       <p>Capture path (inside <code>RenderForCapture</code>):</p>
@@ -93,24 +93,24 @@
   ├─ CDrawingContext::Create                (heap AllocClear; RT not bound yet)
   └─ one frame
        ├─ CDrawingContext::BeginFrame       (pass capture IDeviceTarget; bind RT)
-       ├─ CDrawingContext::DrawVisualTree    ← shared by capture &amp; display
+       ├─ CDrawingContext::DrawVisualTree    ← shared by Capture &amp; Display
        └─ CDrawingContext::EndFrame
   (then RestoreCursors; clear g_pComposition+0x196A)</pre>
-      <p><code>DrawVisualTree</code> is the key step: it draws every Visual that should appear; both capture and display paths pass through it.</p>
+      <p><code>DrawVisualTree</code> is the key step: it draws every Visual that should appear; both Capture and Display paths pass through it.</p>
       <div class="guide-sub">
         <p class="guide-q">Readback flag: g_pComposition + 0x196A</p>
-        <pre class="flow-block">enter capture:  [g_pComposition+0x196A] ← 1
+        <pre class="flow-block">Enter Capture:  [g_pComposition+0x196A] ← 1
   BeginFrame → DrawVisualTree → EndFrame
-leave capture:  [g_pComposition+0x196A] ← 0</pre>
+Leave Capture:  [g_pComposition+0x196A] ← 0</pre>
         <p>In <code>RenderForCapture</code>, DWM writes <code>1</code> to <code>g_pComposition + 0x196A</code> before capture begins. The matching assembly:</p>
         <figure class="figure">
           <img src="images/render-for-capture-196a-write.png" alt="RenderForCapture: mov r15d, 1; CDrawingContext::Create; mov [rax+196Ah], r15b.">
-          <figcaption>Figure 1. Enter capture &mdash; after <code>mov r15d, 1</code>, store to <code>[g_pComposition+196Ah]</code>.</figcaption>
+          <figcaption>Figure 1. Enter Capture &mdash; after <code>mov r15d, 1</code>, store to <code>[g_pComposition+196Ah]</code>.</figcaption>
         </figure>
         <p>When capture finishes, the flag is cleared to <code>0</code> (<code>r13b</code> is 0 here):</p>
         <figure class="figure">
           <img src="images/render-for-capture-196a-clear.png" alt="RenderForCapture teardown: mov [rcx+196Ah], r13b.">
-          <figcaption>Figure 2. Leave capture &mdash; write <code>[g_pComposition+196Ah] ← 0</code>, then <code>RestoreCursors</code>.</figcaption>
+          <figcaption>Figure 2. Leave Capture &mdash; write <code>[g_pComposition+196Ah] ← 0</code>, then <code>RestoreCursors</code>.</figcaption>
         </figure>
         <p>The whole frame is wrapped by this write/clear pair &mdash; the main breakthrough.</p>
       </div>
@@ -133,7 +133,7 @@ leave capture:  [g_pComposition+0x196A] ← 0</pre>
       <p>Trigger a normal BitBlt capture afterward &mdash; every anti-capture window and Visual shows up in the screenshot.</p>
       <p><strong>Interesting side effect</strong></p>
       <p>Under normal conditions the flag only lives for one capture frame: <code>RenderForCapture</code> sets <code>g_pComposition + 0x196A</code> to <code>1</code> before drawing, then clears it to <code>0</code> when the frame ends.</p>
-      <p>The reverse experiment is stranger: leave the capture code alone, but pin that byte to <code>1</code> in memory so DWM stays in readback semantics. Anti-capture windows disappear from the live desktop &mdash; not transparency, but the display path skipping protected content because <code>DrawVisualTree</code> reads the same flag. Trigger another capture and let the normal set/clear cycle run; normal behavior returns.</p>
+      <p>The reverse experiment is stranger: leave the capture code alone, but pin that byte to <code>1</code> in memory so DWM stays in readback semantics. Anti-capture windows disappear from the live desktop &mdash; not transparency, but the Display path skipping protected content because <code>DrawVisualTree</code> reads the same flag. Trigger another capture and let the normal set/clear cycle run; normal behavior returns.</p>
     </article>
 
     <article class="guide-step" id="super-screenshot">
