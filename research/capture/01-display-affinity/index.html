@@ -30,24 +30,49 @@
     <h2>SetWindowDisplayAffinity: mechanism &amp; detection</h2>
     <p class="article-meta">
       <span>Hidden windows &amp; anti-capture series</span>
-      <span>Tools: IDA · CE · Hawkeye Community · Cursor MCP</span>
+      <span>Tools: IDA · Cheat Engine · Hawkeye Community</span>
     </p>
+
+    <article class="guide-step article-intro" id="intro">
+      <strong>1. TL;DR &amp; scope</strong>
+      <p class="lead">
+        <code>SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)</code> eventually sets
+        <strong>bit&nbsp;6 (<code>0x40</code>)</strong> of a DWORD at
+        <code>CWindowContext+0x114</code> inside <code>dwm.exe</code>, matching
+        <code>dwmredir!CWindowContext::HasProtectedContent</code>
+        (<code>SHR 6; AND 1</code>).
+        The win32k path mostly forwards protection into DWM; a practical defender-side surface is
+        scanning <code>CWindowContext</code> objects (vtable + flag + HWND/PID), not tagWND alone.
+      </p>
+      <p class="lead-note">
+        <strong>Test environment:</strong> Windows&nbsp;11 x64, build&nbsp;26100 (figures below).
+        The detection approach applies to <strong>Windows&nbsp;10 and Windows&nbsp;11</strong>;
+        absolute field offsets in the figures vary by build, but the
+        <strong>vtable + protection bit + HWND/PID</strong> pattern is the same.
+        <strong>Hawkeye Community</strong> resolves the vtable from <code>dwmredir.dll</code> (PDB)
+        and discovers object-relative offsets during <code>!hidden_windows -init</code> &mdash; no
+        hard-coded layout in the open-source scanner.
+        <strong>Scope:</strong> detection and reverse-engineering notes for triage tooling; not a
+        bypass or evasion guide.
+      </p>
+    </article>
 
     <nav class="guide-nav" aria-label="On this page">
       <strong>Contents</strong>
       <ol>
+        <li><a href="#intro">TL;DR &amp; scope</a></li>
         <li><a href="#background">Background &amp; series</a></li>
-        <li><a href="#win32k">win32k chain</a></li>
-        <li><a href="#dwm">DWM leads</a></li>
+        <li><a href="#win32k">Win32k chain</a></li>
+        <li><a href="#dwm">DWM investigation</a></li>
         <li><a href="#has-protected">HasProtectedContent</a></li>
         <li><a href="#memory">Memory validation</a></li>
         <li><a href="#detection">Detection</a></li>
-        <li><a href="#opensource">Open-source implementation</a></li>
+        <li><a href="#opensource">Reference implementation</a></li>
       </ol>
     </nav>
 
     <article class="guide-step" id="background">
-      <strong>1. Background &amp; series</strong>
+      <strong>2. Background &amp; series</strong>
       <p>
         <code>SetWindowDisplayAffinity</code> (typically with <code>WDA_EXCLUDEFROMCAPTURE</code>)
         is a well-known way to keep a window visible on the desktop while excluding it from
@@ -62,7 +87,7 @@
     </article>
 
     <article class="guide-step" id="win32k">
-      <strong>2. win32k chain</strong>
+      <strong>3. Win32k chain</strong>
       <p>
         The user-mode API enters the kernel at
         <code>win32kfull!NtUserSetWindowDisplayAffinity</code>; core logic lives in
@@ -83,29 +108,30 @@
         property on the window (tagWND), other kernel-side changes are relatively few.
         Property atom indices also shift between Windows versions, so detecting hidden windows
         from kernel state alone tends to be less stable and less portable.
+        <strong>Takeaway:</strong> if the durable state lives in DWM, scan <code>dwm.exe</code>
+        rather than betting on win32k-only signatures.
       </p>
       <p>
-        Study of <code>dwmcore.dll</code> shows separate paths for capture and direct display,
-        corresponding to <code>CCaptureRenderTarget</code> and <code>CDDisplayRenderTarget</code>
-        respectively. With further observation, the split is clear: for anti-capture, the
-        <code>dwm.exe</code> process owns the full logic; the kernel plays a limited role.
+        Analysis of <code>dwmcore.dll</code> shows separate paths for capture and direct display,
+        corresponding to <code>CCaptureRenderTarget</code> and <code>CDDisplayRenderTarget</code>,
+        respectively. On closer inspection, anti-capture logic lives almost entirely in
+        <code>dwm.exe</code>; the kernel plays a limited role.
       </p>
     </article>
 
     <article class="guide-step" id="dwm">
-      <strong>3. DWM leads</strong>
+      <strong>4. DWM investigation</strong>
       <p>
-        Whether a window is hidden from capture should, in principle, show up in DWM
-        <code>CCaptureRenderTarget</code> composed output.
-        <code>dwm.exe</code> loads many modules; our primary suspects are
+        If a window is hidden from capture, that state should show up in DWM&rsquo;s
+        <code>CCaptureRenderTarget</code> composition path.
+        <code>dwm.exe</code> loads many modules; we started with
         <code>dwm.exe</code>, <code>dwmcore.dll</code>, <code>dwmredir.dll</code>, and
-        <code>uDWM.dll</code> (we search these first below) &mdash; the names all carry
-        <code>dwm</code>.
+        <code>uDWM.dll</code>.
       </p>
       <p>
         In Hawkeye Community, attach to <code>dwm.exe</code> with
-        <code>!probe -pid:&lt;dwm_pid&gt;</code>, then search for <code>protect</code> across the
-        four modules below:
+        <code>!probe -pid:&lt;dwm_pid&gt;</code>, then search for <code>protect</code> across those
+        modules:
         <code>!probe -find:protect -mod:dwmcore,dwmredir,udwm,dwm</code>
       </p>
       <figure class="figure">
@@ -118,15 +144,15 @@
         <li><code>CWindowContext::NotifyProtectionChange</code></li>
       </ul>
       <p>
-        The names are explicit: test whether window content is protected, and notify the
-        composition pipeline when protection changes. DWM also exposes many
-        <code>IsProtected</code> / <code>SetHardwareProtection</code> symbols worth
-        following separately.
+        The names are explicit: one tests whether window content is protected; the other notifies
+        the composition pipeline when protection changes. DWM also exposes many
+        <code>IsProtected</code> and <code>SetHardwareProtection</code> symbols worth
+        tracking separately.
       </p>
     </article>
 
     <article class="guide-step" id="has-protected">
-      <strong>4. What HasProtectedContent does</strong>
+      <strong>5. What HasProtectedContent does</strong>
       <p>
         Disassembly of <code>dwmredir!CWindowContext::HasProtectedContent</code> is straightforward:
       </p>
@@ -141,7 +167,7 @@
       <p>
         When locating <code>CWindowContext</code> instances, note the class has
         <strong>two vftables</strong>. Use the one for <code>IDwmWindow</code>
-        (example from our test machine below):
+        (example from build&nbsp;26100 below):
       </p>
       <figure class="figure">
         <img src="images/probe-vftable-find.png" alt="!probe finds two CWindowContext vftables; IDwmWindow at 0x7FFAF582A000.">
@@ -154,7 +180,7 @@
     </article>
 
     <article class="guide-step" id="memory">
-      <strong>5. Memory validation</strong>
+      <strong>6. Memory validation</strong>
       <p>
         Experiment: call <code>SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)</code> on a window,
         then search for that HWND value in <code>dwm.exe</code> with Cheat Engine to land on the
@@ -195,14 +221,16 @@
         </tbody>
       </table>
       <p>
-        First 8 bytes of the object are the vftable pointer. Exact offsets move between
-        Windows builds, but the combination <strong>vftable + protection bit + HWND/PID</strong>
-        has been stable enough across versions we tested to build detection around.
+        First 8 bytes of the object are the vftable pointer. Exact offsets (such as
+        <code>+0x114</code> on build&nbsp;26100) move between Windows builds, but the combination
+        <strong>vftable + protection bit + HWND/PID</strong> has been stable enough on
+        <strong>Windows&nbsp;10 and 11</strong> to build detection around. Treat figure values as
+        one validated snapshot, not constants to paste into a scanner.
       </p>
     </article>
 
     <article class="guide-step" id="detection">
-      <strong>6. Detection</strong>
+      <strong>7. Detection</strong>
       <p>
         Window composition for capture exclusion lives mainly in the DWM process and is
         largely decoupled from the kernel path, so scanning <code>dwm.exe</code> is a practical
@@ -222,22 +250,26 @@
         <li>Record object-relative offsets for flags, kind, HWND, and PID; reuse them on later scans.</li>
       </ul>
       <p>
-        Absolute field offsets (such as <code>+0x114</code> for the flag DWORD on our test build)
-        change between Windows versions. Anchoring on the vtable and calibrating once keeps the
-        scanner portable. In the Community tool, window kind is filtered to <code>0x2</code> and
-        <code>0x4</code> during scans even though <code>0x1</code> may appear in memory dumps.
+        Absolute field offsets change between Windows versions and builds. Portability comes from
+        anchoring on the vtable and running a one-time calibration on the target machine.
+        The open-source Community build does this automatically: vtable from
+        <code>dwmredir.dll</code> symbols, relative offsets learned during
+        <code>!hidden_windows -init</code>.
+        Window kind is filtered to <code>0x2</code> and <code>0x4</code> during scans even though
+        <code>0x1</code> may appear in memory dumps.
       </p>
     </article>
 
     <article class="guide-step" id="opensource">
-      <strong>7. Open-source implementation</strong>
+      <strong>8. Reference implementation (Hawkeye Community)</strong>
       <p>
         The detection approach in this article is implemented in <strong>Hawkeye Community</strong>:
         <code>!hidden_windows</code> (run <code>-init</code> first) and the staging command
-        <code>!hidden_windows_sim</code>. The Community build anchors on the
-        <code>CWindowContext</code> / <code>IDwmWindow</code> vtable in <code>dwmredir.dll</code>,
-        calibrates relative offsets for flags, kind, HWND, and PID, then scans <code>dwm.exe</code>
-        memory.
+        <code>!hidden_windows_sim</code>. Tested on <strong>Windows&nbsp;10 and 11</strong>.
+        The Community build resolves the <code>CWindowContext</code> / <code>IDwmWindow</code>
+        vtable from <code>dwmredir.dll</code> at runtime, calibrates relative offsets for flags,
+        kind, HWND, and PID during <code>-init</code>, then scans <code>dwm.exe</code> memory.
+        No fixed <code>+0x114</code>-style constants are baked into the scanner.
       </p>
       <p>
         Source:
@@ -248,7 +280,7 @@
       <p>
         <strong>Next in the series:</strong> <a href="../02-visual-hiding/">Visual-layer hiding &mdash; mechanism &amp; detection</a>.
       </p>
-      <p class="guide-up"><a href="#background">&uarr; Contents</a></p>
+      <p class="guide-up"><a href="#intro">&uarr; Contents</a></p>
     </article>
 
     <p class="article-nav">
