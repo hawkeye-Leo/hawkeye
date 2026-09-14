@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Part 3: BitBlt &ldquo;super screenshot&rdquo; &mdash; Hawkeye Research</title>
-  <meta name="description" content="BitBlt to DWM RenderForCapture, Display vs Capture paths, g_pComposition+0x196A readback flag, and Lab validation.">
+  <meta name="description" content="DWM BitBlt capture path: RenderForCapture, g_pComposition readback flag, and why DisplayAffinity and Visual hiding fail under readback manipulation on Windows 10/11.">
   <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/capture/03-readback-mode/">
   <link rel="stylesheet" href="../../../site.css?v=20260909">
 </head>
@@ -27,38 +27,75 @@
 
   <main class="wrap">
     <p class="kicker"><a href="../../">Research</a> · <a href="../">Capture</a> · Part 3</p>
-    <h2>BitBlt &ldquo;super screenshot&rdquo; (DWM)</h2>
+    <h2>BitBlt &ldquo;super screenshot&rdquo; (DWM readback)</h2>
     <p class="article-meta">
       <span>Hidden windows &amp; anti-capture series</span>
-      <span>Tools: IDA · CE · Hawkeye Lab · Cursor MCP</span>
+      <span>Tools: IDA · Cheat Engine · Hawkeye Community</span>
     </p>
+
+    <article class="guide-step article-intro" id="intro">
+      <strong>1. TL;DR &amp; scope</strong>
+      <p class="lead">
+        A normal <code>BitBlt</code> screenshot enters the kernel, then continues into DWM&rsquo;s
+        <code>dwmcore!CaptureBitsResponse::RenderForCapture</code> path.
+        During capture, DWM sets a readback flag at
+        <code>g_pComposition+0x196A</code> (<code>CComposition::IsScreenReadBack</code> on
+        Win11-class builds). <code>DrawVisualTree</code> consults that flag when deciding whether
+        content protected by
+        <a href="../01-display-affinity/">part&nbsp;1</a> (DisplayAffinity) and
+        <a href="../02-visual-hiding/">part&nbsp;2</a> (Visual hiding) should appear in the
+        output.
+        If the write of <code>1</code> is suppressed for one capture frame, BitBlt can return
+        pixels that bypass both protection mechanisms &mdash; the &ldquo;super screenshot&rdquo;
+        behavior described here.
+      </p>
+      <p class="lead-note">
+        <strong>Test environment:</strong> Windows&nbsp;11 x64, build&nbsp;26100 (figures below).
+        The capture-path semantics apply to <strong>Windows&nbsp;10 and Windows&nbsp;11</strong>;
+        the patch site encoding and <code>+0x196A</code> offset vary by build &mdash; locate
+        <code>RenderForCapture</code> from <code>dwmcore.dll</code> symbols (PDB) and scan for
+        the store pattern rather than hard-coding bytes.
+        Hawkeye Community ships <code>!screensnap</code>, which automates pattern discovery,
+        temporary patching, BitBlt capture, and restore.
+        <strong>Scope:</strong> reverse-engineering notes on why window-level anti-capture can fail
+        under BitBlt readback manipulation, and what that implies for defenders; not a cheat or
+        evasion guide.
+      </p>
+    </article>
 
     <nav class="guide-nav" aria-label="On this page">
       <strong>Contents</strong>
       <ol>
+        <li><a href="#intro">TL;DR &amp; scope</a></li>
         <li><a href="#background">Background &amp; series</a></li>
         <li><a href="#bitblt">BitBlt &amp; DWM</a></li>
         <li><a href="#dual-path">Display vs Capture</a></li>
-        <li><a href="#breakthrough">Analysis &amp; breakthrough</a></li>
-        <li><a href="#super-screenshot">Implementation walkthrough</a></li>
-        <li><a href="#lab">Hawkeye Lab</a></li>
-        <li><a href="#opensource">Open-source implementation</a></li>
+        <li><a href="#readback-flag">Readback flag</a></li>
+        <li><a href="#validation">Validation</a></li>
+        <li><a href="#opensource">Reference implementation</a></li>
       </ol>
     </nav>
 
     <article class="guide-step" id="background">
-      <strong>1. Background &amp; series</strong>
+      <strong>2. Background &amp; series</strong>
       <p>This series has three parts. This article is part 3:</p>
       <ul class="article-list">
         <li><a href="../01-display-affinity/">Part 1</a>: <code>SetWindowDisplayAffinity</code> &mdash; mechanism &amp; detection</li>
         <li><a href="../02-visual-hiding/">Part 2</a>: Visual-layer hiding &mdash; mechanism &amp; detection</li>
-        <li><strong>Part 3 (this page)</strong>: BitBlt-style &ldquo;super screenshot&rdquo; approach</li>
+        <li><strong>Part 3 (this page)</strong>: BitBlt-style &ldquo;super screenshot&rdquo; &mdash; DWM readback mode</li>
       </ul>
-      <p>Parts 1 and 2 covered anti-capture at the window level and on the Visual layer; this part leaves detection behind and explores a BitBlt capture-path &ldquo;super screenshot&rdquo; approach that can bypass those protections.</p>
+      <p>
+        Parts&nbsp;1 and 2 documented defender-side detection surfaces in <code>dwm.exe</code>.
+        This part closes the loop: it explains the DWM <strong>capture path</strong> and why
+        BitBlt readback semantics can bypass both protection styles if an attacker briefly
+        suppresses the readback flag during <code>RenderForCapture</code>.
+        Understanding that gap matters for anti-cheat and forensics teams who treat
+        DisplayAffinity alone as sufficient protection.
+      </p>
     </article>
 
     <article class="guide-step" id="bitblt">
-      <strong>2. BitBlt &amp; DWM</strong>
+      <strong>3. BitBlt &amp; DWM</strong>
       <p>Simplified flow:</p>
       <pre class="flow-block">gdi32!BitBlt
   └─ win32kfull!NtGdiBitBlt
@@ -66,13 +103,24 @@
             └─ LpcSendWaitReceivePort → dwm.exe
                  └─ dwmcore!CaptureBitsResponse::RenderForCapture
                       └─ return to caller</pre>
-      <p>Like DisplayAffinity, a BitBlt call still enters the kernel first, then sends an LPC message to <code>dwm.exe</code>. Once <code>dwm.exe</code> receives it, execution lands in <code>dwmcore!CaptureBitsResponse::RenderForCapture</code>, then returns the same way.</p>
-      <p>In other words, a BitBlt screenshot is not decided in the kernel &mdash; it depends on DWM. More bluntly, <code>dwmcore.dll</code> is in charge.</p>
+      <p>
+        Like DisplayAffinity, a <code>BitBlt</code> call enters the kernel first, then sends an
+        LPC message to <code>dwm.exe</code>. Execution lands in
+        <code>dwmcore!CaptureBitsResponse::RenderForCapture</code>, then returns through the
+        same path.
+      </p>
+      <p>
+        A BitBlt screenshot is therefore not decided in the kernel &mdash; composition and
+        protection outcomes depend on DWM, primarily <code>dwmcore.dll</code>.
+      </p>
     </article>
 
     <article class="guide-step" id="dual-path">
-      <strong>3. Display vs Capture</strong>
-      <p>From analysis, Display and Capture use separate RenderTargets but one shared pipeline: different surfaces, same global Visual tree and composition logic.</p>
+      <strong>4. Display vs Capture</strong>
+      <p>
+        Analysis shows that Display and Capture use separate RenderTargets but one shared pipeline:
+        different surfaces, same global Visual tree and composition logic.
+      </p>
       <p>Normal Display path:</p>
       <pre class="flow-block">CDDisplayRenderTarget::RenderAndPresent
   → BeginFrame(Display RT)
@@ -83,10 +131,14 @@
   → DrawVisualTree
   → read pixels from capturebits scratch
   → section back to kernel</pre>
+      <p>
+        <strong>Takeaway:</strong> both paths converge on <code>DrawVisualTree</code>. Any
+        semantic flag that changes what that function draws affects Display, Capture, or both.
+      </p>
     </article>
 
-    <article class="guide-step" id="breakthrough">
-      <strong>4. Analysis &amp; breakthrough</strong>
+    <article class="guide-step" id="readback-flag">
+      <strong>5. Readback flag (<code>g_pComposition + 0x196A</code>)</strong>
       <p>IDA analysis of <code>CaptureBitsResponse::RenderForCapture</code> &mdash; simplified call order:</p>
       <pre class="flow-block">CaptureBitsResponse::RenderForCapture
   ├─ CComposition::ShowHideCursors(0)       (Hide cursor Visuals; CExcludeVisualReference::Hide)
@@ -96,13 +148,20 @@
        ├─ CDrawingContext::DrawVisualTree    ← shared by Capture &amp; Display
        └─ CDrawingContext::EndFrame
   (then RestoreCursors; clear g_pComposition+0x196A)</pre>
-      <p><code>DrawVisualTree</code> is the key step: it draws every Visual that should appear; both Capture and Display paths pass through it.</p>
+      <p>
+        <code>DrawVisualTree</code> is the key step: it draws every Visual that should appear;
+        both Capture and Display paths pass through it.
+      </p>
       <div class="guide-sub">
-        <p class="guide-q">Readback flag: g_pComposition + 0x196A</p>
+        <p class="guide-q">Enter / leave capture</p>
         <pre class="flow-block">Enter Capture:  [g_pComposition+0x196A] ← 1
   BeginFrame → DrawVisualTree → EndFrame
 Leave Capture:  [g_pComposition+0x196A] ← 0</pre>
-        <p>In <code>RenderForCapture</code>, DWM writes <code>1</code> to <code>g_pComposition + 0x196A</code> before capture begins. The matching assembly:</p>
+        <p>
+          In <code>RenderForCapture</code>, DWM writes <code>1</code> to
+          <code>g_pComposition + 0x196A</code> before capture begins. The matching assembly on
+          build&nbsp;26100:
+        </p>
         <figure class="figure">
           <img src="images/render-for-capture-196a-write.png" alt="RenderForCapture: mov r15d, 1; CDrawingContext::Create; mov [rax+196Ah], r15b.">
           <figcaption>Figure 1. Enter Capture &mdash; after <code>mov r15d, 1</code>, store to <code>[g_pComposition+196Ah]</code>.</figcaption>
@@ -112,59 +171,113 @@ Leave Capture:  [g_pComposition+0x196A] ← 0</pre>
           <img src="images/render-for-capture-196a-clear.png" alt="RenderForCapture teardown: mov [rcx+196Ah], r13b.">
           <figcaption>Figure 2. Leave Capture &mdash; write <code>[g_pComposition+196Ah] ← 0</code>, then <code>RestoreCursors</code>.</figcaption>
         </figure>
-        <p>The whole frame is wrapped by this write/clear pair &mdash; the main breakthrough.</p>
+        <p>The whole capture frame is wrapped by this write/clear pair.</p>
       </div>
       <div class="guide-sub">
-        <p class="guide-q">Further cross-check</p>
-        <p>A global IDA search for <code>196Ah</code> leads to readback-related code; on Win11 and similar builds the PDB names it <code>IsScreenReadBack()</code>:</p>
+        <p class="guide-q">Cross-check: <code>IsScreenReadBack</code></p>
+        <p>
+          A global IDA search for <code>196Ah</code> leads to readback-related code; on Win11-class
+          builds the PDB names it <code>CComposition::IsScreenReadBack</code>:
+        </p>
         <figure class="figure">
           <img src="images/is-screen-readback-asm.png" alt="IsScreenReadBack disassembly: mov al, [rcx+196Ah]; retn.">
           <figcaption>Figure 3. <code>CComposition::IsScreenReadBack</code> &mdash; load <code>[rcx+196Ah]</code> and return; i.e. test the readback / capture semantic flag.</figcaption>
         </figure>
-        <p>The ReadBack in the name is essentially asking &ldquo;are we in readback/capture state right now?&rdquo; That symbol is often missing on Win10; the machine analyzed here is Win11, which was convenient.</p>
+        <p>
+          In practice, the helper answers &ldquo;are we in readback/capture state right now?&rdquo;
+          The symbol is often missing on Win10; resolve the field offset from instruction patterns
+          on the target build instead.
+        </p>
       </div>
-      <p><strong>Lab validation</strong></p>
-      <p>Static analysis only gets us this far; the real test is in a running <code>dwm.exe</code>: at the site marked in the red box in Figure 4, change the write from <code>1</code> to <code>0</code> and see whether a normal BitBlt can still capture protected windows.</p>
-      <p>Attach to <code>dwm.exe</code> with Hawkeye Lab and patch the Figure 1 site &mdash; one byte, changing the immediate in <code>mov r15d, 1</code> from <code>01</code> to <code>00</code>:</p>
+    </article>
+
+    <article class="guide-step" id="validation">
+      <strong>6. Validation</strong>
+      <p>
+        Static analysis only goes so far. The decisive test is in a running
+        <code>dwm.exe</code>: at the site marked in Figure&nbsp;1, change the write from
+        <code>1</code> to <code>0</code> and observe whether a normal BitBlt still captures
+        protected windows.
+      </p>
+      <p>
+        Attach to <code>dwm.exe</code> and patch the Figure&nbsp;1 site &mdash; one byte,
+        changing the immediate in <code>mov r15d, 1</code> from <code>01</code> to <code>00</code>
+        (the figure below was taken with Hawkeye Lab memory editing; the same workflow is
+        automated in Community via <code>!screensnap</code>):
+      </p>
       <figure class="figure">
         <img src="images/lab-patch-mov-r15d-1-to-0.png" alt="Hawkeye Lab Memory Viewer: Edit Memory changing 01 to 00 in mov r15d,1.">
-        <figcaption>Figure 4. Hawkeye Lab &mdash; turn <code>mov r15d, 1</code> into <code>mov r15d, 0</code> (immediate <code>01</code> &rarr; <code>00</code>).</figcaption>
+        <figcaption>Figure 4. Turn <code>mov r15d, 1</code> into <code>mov r15d, 0</code> (immediate <code>01</code> &rarr; <code>00</code>).</figcaption>
       </figure>
-      <p>Trigger a normal BitBlt capture afterward &mdash; every anti-capture window and Visual shows up in the screenshot.</p>
-      <p><strong>Interesting side effect</strong></p>
-      <p>Under normal conditions the flag only lives for one capture frame: <code>RenderForCapture</code> sets <code>g_pComposition + 0x196A</code> to <code>1</code> before drawing, then clears it to <code>0</code> when the frame ends.</p>
-      <p>The reverse experiment is stranger: leave the capture code alone, but pin that byte to <code>1</code> in memory so DWM stays in readback semantics. Anti-capture windows disappear from the live desktop &mdash; not transparency, but the Display path skipping protected content because <code>DrawVisualTree</code> reads the same flag. Trigger another capture and let the normal set/clear cycle run; normal behavior returns.</p>
-    </article>
-
-    <article class="guide-step" id="super-screenshot">
-      <strong>5. Implementation walkthrough</strong>
-      <p>The Lab immediate patch proves the idea; what you need in practice is a repeatable, automatable workflow. Patch the readback writer in <code>dwm.exe</code> remotely before the BitBlt call, so <code>g_pComposition + 0x196A</code> stays <code>0</code> for that capture frame; restore the bytes after the BitBlt call returns. No injection into <code>dwm.exe</code>, no hooks &mdash; only a very short-lived code patch.</p>
-      <p>This works for both Part 1 DisplayAffinity and Part 2 Visual hiding: capture-path protection is gated on readback semantics. Four steps:</p>
+      <p>
+        Trigger a normal BitBlt capture afterward &mdash; windows and Visuals protected under
+        parts&nbsp;1 and 2 appear in the screenshot.
+      </p>
+      <p><strong>Side effect worth noting</strong></p>
+      <p>
+        Under normal conditions the flag only lives for one capture frame:
+        <code>RenderForCapture</code> sets <code>g_pComposition + 0x196A</code> to <code>1</code>
+        before drawing, then clears it to <code>0</code> when the frame ends.
+      </p>
+      <p>
+        The inverse experiment is more surprising: leave the capture code alone, but pin that byte
+        to <code>1</code> in memory so DWM stays in readback semantics. Protected windows
+        disappear from the <strong>live desktop</strong> &mdash; not transparency, but the Display
+        path skipping protected content because <code>DrawVisualTree</code> reads the same flag.
+        Trigger another capture and let the normal set/clear cycle run; desktop behavior returns.
+      </p>
+      <p><strong>Repeatable workflow (research reproduction)</strong></p>
+      <p>
+        The one-byte patch proves the idea; a reproducible workflow patches the readback writer in
+        <code>dwm.exe</code> remotely before the BitBlt call so
+        <code>g_pComposition + 0x196A</code> stays <code>0</code> for that capture frame, then
+        restores the original bytes after BitBlt returns. No injection into <code>dwm.exe</code>,
+        no hooks &mdash; only a very short-lived code patch.
+      </p>
       <ol class="article-list">
-        <li><strong>Locate the patch site.</strong> In <code>dwmcore.dll</code>&rsquo;s <code>RenderForCapture</code>, find the store to <code>[g_pComposition+196Ah]</code>. On the Win11 build analyzed here it is <code>mov [rax+196Ah], r15b</code> (Figure 1, preceded by <code>mov r15d, 1</code>). Encoding varies by build; scan for the pattern instead of hard-coding an absolute address.</li>
+        <li><strong>Locate the patch site.</strong> In <code>dwmcore.dll</code>&rsquo;s <code>RenderForCapture</code>, find the store to <code>[g_pComposition+196Ah]</code>. On build&nbsp;26100 it is <code>mov [rax+196Ah], r15b</code> (Figure&nbsp;1, preceded by <code>mov r15d, 1</code>). Encoding varies by build; scan for the pattern instead of hard-coding an absolute address.</li>
         <li><strong>Rewrite the instruction.</strong> Turn the &ldquo;write <code>1</code>&rdquo; into &ldquo;write <code>0</code>&rdquo;. Either change the store to <code>mov [rax+196Ah], 0</code>, or flip the immediate in <code>mov r15d, 1</code> (<code>01</code> &rarr; <code>00</code>).</li>
-        <li><strong>Take a normal screenshot.</strong> Call BitBlt.</li>
-        <li><strong>Restore the patch.</strong> Write the original bytes back.</li>
+        <li><strong>Take a normal screenshot.</strong> Call BitBlt on the primary display.</li>
+        <li><strong>Restore the patch.</strong> Write the original bytes back immediately.</li>
       </ol>
-    </article>
-
-    <article class="guide-step" id="lab">
-      <strong>6. Hawkeye Lab</strong>
-      <p>Three articles, one surface: DisplayAffinity, Visual hiding, and the BitBlt readback bypass. For game anti-cheat engineers the grind is rarely a single trick &mdash; it is whether the full loop &mdash; analyze behavior, locate code, refresh signatures, ship detection &mdash; can run fast, reliably, and again and again.</p>
-      <p><strong>Hawkeye Lab</strong> is built for that workflow: industrial, repeatable anti-cheat instead of groping across disconnected tools. PDF reports land in one shot with findings and assessment dimensions together, ready to reference and act on.</p>
-      <p><a href="https://hawkeye-leo.github.io/hawkeye/lab/">About Hawkeye Lab &rarr;</a></p>
+      <p>
+        This bypasses both part&nbsp;1 (DisplayAffinity) and part&nbsp;2 (Visual hiding) because
+        capture-path protection is gated on readback semantics, not on the protection bits alone.
+      </p>
     </article>
 
     <article class="guide-step" id="opensource">
-      <strong>7. Open-source implementation</strong>
-      <p>The code for this part is open-sourced.</p>
+      <strong>7. Reference implementation (Hawkeye Community)</strong>
+      <p>
+        The research workflow in this article is implemented in Hawkeye Community as
+        <code>!screensnap</code>. It resolves <code>RenderForCapture</code> from
+        <code>dwmcore.dll</code> symbols, scans the function for the readback store pattern,
+        applies a temporary patch (<code>mov byte ptr [rax+disp32], 0</code>), captures the
+        primary display via BitBlt, then restores the original bytes. Output PNGs land under the
+        application <code>screensnap/</code> folder.
+      </p>
+      <p>
+        Use part&nbsp;1&rsquo;s <code>!hidden_windows</code> (run <code>!hidden_windows -init</code>
+        first) to confirm protected windows exist,
+        then run <code>!screensnap</code> to reproduce the readback suppression behavior described
+        above. Validated on <strong>most Windows&nbsp;10 and&nbsp;11 systems</strong> we tested
+        &mdash; not every build or configuration. Patch-site discovery is pattern-based rather than
+        hard-coded to build&nbsp;26100.
+      </p>
       <p>
         Source:
-        <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a><br>
+        <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a>
+        (<code>capture/screensnap.cpp</code>)<br>
         Binaries:
         <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">GitHub Releases (latest)</a>
       </p>
-      <p class="guide-up"><a href="#background">&uarr; Contents</a></p>
+      <p>
+        <strong>Series complete.</strong>
+        <a href="../01-display-affinity/">Part 1</a> &middot;
+        <a href="../02-visual-hiding/">Part 2</a> &middot;
+        <a href="../">Capture index</a>
+      </p>
+      <p class="guide-up"><a href="#intro">&uarr; Contents</a></p>
     </article>
 
     <p class="article-nav">

@@ -265,7 +265,8 @@
       <p>
         The detection approach in this article is implemented in <strong>Hawkeye Community</strong>:
         <code>!hidden_windows</code> (run <code>-init</code> first) and the staging command
-        <code>!hidden_windows_sim</code>. Tested on <strong>Windows&nbsp;10 and 11</strong>.
+        <code>!hidden_windows_sim</code>. Validated on <strong>most Windows&nbsp;10 and&nbsp;11
+        systems</strong> we tested &mdash; not every build or configuration.
         The Community build resolves the <code>CWindowContext</code> / <code>IDwmWindow</code>
         vtable from <code>dwmredir.dll</code> at runtime, calibrates relative offsets for flags,
         kind, HWND, and PID during <code>-init</code>, then scans <code>dwm.exe</code> memory.
