@@ -14,6 +14,11 @@ research/
     01-display-affinity/
       index.html
       images/
+  rop/
+    index.html
+    01-gadgets-stack-and-rop-basics/
+      index.html
+      images/
 ```
 
 ## Adding an article

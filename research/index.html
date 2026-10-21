@@ -52,12 +52,24 @@
             &ldquo;super screenshot&rdquo; approach &mdash; from win32k through <code>dwm.exe</code>.
           </p>
         </a>
+        <a class="research-series-card" href="rop/">
+          <span class="series-meta">ROP · 4 planned</span>
+          <h3>ROP &amp; game-security boundaries</h3>
+          <p>
+            Gadgets, stack layout, Notepad MessageBox lab, GDI demo, and anti-cheat detection angles.
+            Built with <strong>Hawkeye ROP</strong> and release builds on GitHub.
+          </p>
+        </a>
       </div>
     </section>
 
     <section>
       <h3>Latest</h3>
       <ul class="article-list">
+        <li>
+          <a href="rop/01-gadgets-stack-and-rop-basics/">ROP Part 1: gadgets, stack layout &amp; basics</a>
+          &mdash; <code>ret</code> chains, <code>GetDC(NULL)</code>, Hawkeye ROP / Lab, vs shellcode
+        </li>
         <li>
           <a href="capture/03-readback-mode/">Part 3: BitBlt &ldquo;super screenshot&rdquo; &mdash; DWM readback mode</a>
           &mdash; <code>RenderForCapture</code>, <code>g_pComposition + 0x196A</code>, Lab patch &amp; workflow

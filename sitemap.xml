@@ -27,4 +27,10 @@
   <url>
     <loc>https://hawkeye-leo.github.io/hawkeye/research/capture/03-readback-mode/</loc>
   </url>
+  <url>
+    <loc>https://hawkeye-leo.github.io/hawkeye/research/rop/</loc>
+  </url>
+  <url>
+    <loc>https://hawkeye-leo.github.io/hawkeye/research/rop/01-gadgets-stack-and-rop-basics/</loc>
+  </url>
 </urlset>

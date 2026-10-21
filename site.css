@@ -994,6 +994,349 @@ footer {
   white-space: pre-wrap;
 }
 
+/* ASCII stack / memory sketches — keep column alignment (do not wrap) */
+.flow-block.stack-diagram {
+  white-space: pre;
+  tab-size: 4;
+}
+
+/* ROP tutorial series — hero + aligned TOC (Kanxue / research) */
+.article-hero.rop-hero {
+  margin: 0 0 1rem;
+  padding: 1.2rem 1.35rem 1.05rem;
+  background: linear-gradient(135deg, #fff8fa 0%, #fafcfa 52%, #ffffff 100%);
+  border: 1px solid #e8c4d4;
+  border-left: 4px solid #8e2452;
+  border-radius: 10px;
+}
+
+.article-hero.rop-hero .kicker {
+  margin-bottom: 0.55rem;
+}
+
+.rop-series-badge {
+  display: inline-block;
+  margin: 0 0 0.7rem;
+  padding: 0.24rem 0.72rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #6d1c40;
+  background: #f3dce6;
+  border: 1px solid #e8b4c8;
+  border-radius: 999px;
+}
+
+.article-hero.rop-hero h2 {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.35rem, 2.8vw, 1.72rem);
+  line-height: 1.38;
+  color: #4a1028;
+  max-width: 42rem;
+}
+
+.article-hero.rop-hero .lead {
+  margin: 0;
+  max-width: 40rem;
+  color: #6d5060;
+  font-size: 1.02rem;
+}
+
+.article-hero.rop-hero .lead a {
+  color: #8e2452;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.article-hero.rop-hero .lead a:hover {
+  text-decoration: underline;
+}
+
+.article-hero.rop-hero .lead code {
+  font-size: 0.88em;
+  padding: 0.1rem 0.32rem;
+  border-radius: 4px;
+  background: #f8eef2;
+  border: 1px solid #ead6de;
+  color: #4a1028;
+}
+
+.guide-nav.guide-nav--rop-series {
+  border-color: #e8c4d4;
+  background: #fffcfd;
+  padding: 1rem 1.2rem 0.85rem;
+}
+
+.guide-nav--rop-series .guide-nav-title {
+  display: block;
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8e2452;
+}
+
+.guide-nav--rop-series .series-toc {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.guide-nav--rop-series .series-toc li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  padding: 0.52rem 0.55rem;
+  margin: 0 -0.55rem;
+  border-bottom: 1px solid #f0e6ec;
+  line-height: 1.45;
+}
+
+.guide-nav--rop-series .series-toc li:last-child {
+  border-bottom: none;
+}
+
+.guide-nav--rop-series .series-toc .num {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #8e2452;
+  text-align: right;
+}
+
+.guide-nav--rop-series .series-toc .label {
+  color: var(--ink);
+  min-width: 0;
+}
+
+.guide-nav--rop-series .series-toc li.is-upcoming .label {
+  color: var(--muted);
+}
+
+.guide-nav--rop-series .series-toc li.is-current {
+  background: rgba(142, 36, 82, 0.07);
+  border-radius: 8px;
+  border-bottom-color: transparent;
+}
+
+.guide-nav--rop-series .series-toc .tag {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: #8e2452;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.guide-nav--rop-series .series-toc .tag--planned {
+  color: #8e6a78;
+  background: #f5eef2;
+  border: 1px solid #e8c4d4;
+}
+
+/* ROP article body — match hero / series TOC */
+.rop-article .guide-step--rop {
+  border-color: #ead6de;
+  background: #fffcfd;
+}
+
+.rop-article .guide-step--rop > strong {
+  color: #4a1028;
+  font-size: 1.08rem;
+  padding-bottom: 0.55rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.rop-article .guide-step--rop p {
+  color: #3a454d;
+}
+
+.rop-article .guide-step--rop p + .rop-point-list {
+  margin-top: 0.35rem;
+}
+
+.rop-article .rop-part-summary > p:last-of-type {
+  margin-bottom: 0;
+  color: #4a1028;
+  font-weight: 550;
+}
+
+.rop-article .guide-step--rop .article-list,
+.rop-article .guide-step--rop ol.article-list {
+  color: #3a454d;
+}
+
+.rop-article .guide-step--rop .rop-sublead {
+  margin: 0.85rem 0 0.45rem;
+  font-weight: 650;
+  color: #4a1028;
+}
+
+.rop-article .guide-step--rop p .rop-sublead {
+  display: inline;
+  margin: 0;
+}
+
+.rop-tool-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .rop-tool-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.rop-tool-list li {
+  margin: 0;
+  padding: 0.78rem 0.9rem;
+  border: 1px solid #e8c4d4;
+  border-radius: 8px;
+  background: #ffffff;
+  line-height: 1.45;
+  color: #3a454d;
+}
+
+.rop-tool-list strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #8e2452;
+  font-size: 0.98rem;
+}
+
+.rop-article .figure.rop-figure {
+  margin: 1rem 0 1.1rem;
+}
+
+.rop-article .figure.rop-figure img {
+  border-color: #e8c4d4;
+  box-shadow: 0 1px 0 rgba(74, 16, 40, 0.06);
+}
+
+.rop-article .figure.rop-figure figcaption {
+  margin-top: 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: #8e2452;
+  letter-spacing: 0.04em;
+}
+
+.rop-article .flow-block.stack-diagram {
+  border-color: #e0ccd6;
+  background: #faf6f8;
+  color: #2d3439;
+}
+
+.rop-article .rop-callout {
+  margin: 0.75rem 0 0.85rem;
+  padding: 0.65rem 0.9rem;
+  border-left: 3px solid #8e2452;
+  background: rgba(142, 36, 82, 0.06);
+  border-radius: 0 8px 8px 0;
+  color: #4a1028;
+  line-height: 1.5;
+}
+
+.rop-article .guide-step--rop .rop-point-list {
+  margin: 0 0 0.85rem;
+  padding-left: 1.35rem;
+  color: #3a454d;
+}
+
+.rop-article .guide-step--rop .rop-point-list li {
+  margin: 0.4rem 0;
+  padding-left: 0.15rem;
+}
+
+.rop-article .guide-step--next {
+  border-left: 4px solid #8e2452;
+  background: linear-gradient(90deg, #fff8fa 0%, #fffcfd 100%);
+}
+
+.rop-article .guide-step--next > strong {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0.45rem;
+}
+
+.rop-article .guide-step--next p {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.rop-article .article-nav--rop {
+  margin: 0.5rem 0 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid #ead6de;
+}
+
+.rop-article .article-nav--rop a {
+  color: #8e2452;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.rop-article .article-nav--rop a:hover {
+  text-decoration: underline;
+}
+
+.rop-article .guide-step--rop code {
+  font-size: 0.9em;
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  background: #f8eef2;
+  border: 1px solid #ead6de;
+  color: #4a1028;
+}
+
+.rop-article .rop-point-list li::marker {
+  color: #8e2452;
+  font-weight: 650;
+}
+
+.note.note--rop {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #e8c4d4;
+  border-left: 3px solid #8e2452;
+  border-radius: 0 8px 8px 0;
+  background: rgba(142, 36, 82, 0.05);
+  color: #4a1028;
+  line-height: 1.5;
+}
+
+.rop-hub .guide-step--rop .article-list a,
+.rop-article .guide-step--rop .article-list a {
+  color: #8e2452;
+  text-decoration: none;
+  font-weight: inherit;
+}
+
+.rop-hub .guide-step--rop .article-list a:hover,
+.rop-article .guide-step--rop .article-list a:hover {
+  text-decoration: underline;
+}
+
+.rop-hub .guide-step--rop .article-list li {
+  margin: 0.65rem 0;
+  padding: 0.55rem 0 0.55rem 0.15rem;
+  border-bottom: 1px solid #f0e6ec;
+}
+
+.rop-hub .guide-step--rop .article-list li:last-child {
+  border-bottom: none;
+}
+
 .article-table {
   width: 100%;
   border-collapse: collapse;

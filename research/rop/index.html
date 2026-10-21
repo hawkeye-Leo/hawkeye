@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ROP &amp; game-security boundaries — Hawkeye Research</title>
+  <meta name="description" content="Hawkeye ROP series: gadgets, Notepad lab, GDI demo, and anti-cheat detection surfaces. Published on GitHub Pages.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/rop/">
+  <link rel="stylesheet" href="../../site.css?v=20261022">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../">Community</a>
+        <a href="../../lab/">Lab</a>
+        <a class="active" href="../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <header class="article-hero rop-hero">
+      <p class="kicker"><a href="../">Research</a> · ROP</p>
+      <h2>ROP &amp; game-security boundaries</h2>
+      <p class="lead">
+        A four-part series on return-oriented programming in Windows user mode, paired with the open-source
+        <a href="https://github.com/hawkeye-Leo/hawkeye-rop">Hawkeye ROP</a> gadget finder and Notepad lab demos.
+      </p>
+    </header>
+
+    <div class="note note--rop">
+      For learning on <strong>systems you are authorized to test</strong> and in <strong>isolated lab environments</strong> only.
+    </div>
+
+    <div class="rop-article rop-hub">
+
+    <article class="guide-step guide-step--rop">
+      <strong>Articles</strong>
+      <ul class="article-list">
+        <li>
+          <strong><a href="01-gadgets-stack-and-rop-basics/">Part 1: What ROP is — gadgets, stack layout, basics</a></strong>
+          <br>
+          Stack model · Hawkeye ROP / Lab · GetDC setup · ROP vs shellcode
+        </li>
+        <li>
+          <strong>Part 2: First lab — MessageBox via ROP &amp; clean exit</strong> (planned)
+          <br>
+          <code>Demo/notepad-test</code> · 1&nbsp;MiB A/B/C layout
+        </li>
+        <li>
+          <strong>Part 3: Deeper dive — ROP capability boundaries in game security</strong> (planned)
+          <br>
+          <code>Demo/draw-test</code> · multi-API private stack
+        </li>
+        <li>
+          <strong>Part 4: Anti-cheat perspective &amp; detection</strong> (planned)
+          <br>
+          Hawkeye Lab · gadget false positives · mitigation thinking
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Repositories &amp; releases</strong>
+      <ul class="article-list">
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-rop">github.com/hawkeye-Leo/hawkeye-rop</a>
+          — Hawkeye ROP · <a href="https://github.com/hawkeye-Leo/hawkeye-rop/releases">Releases</a>
+        </li>
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a>
+          — Hawkeye Community
+        </li>
+      </ul>
+    </article>
+
+    <p class="article-nav article-nav--rop">
+      <a href="../">&larr; Research</a>
+      · <a href="../capture/">Capture series</a>
+    </p>
+
+    </div>
+
+    <footer>
+      <a href="../../">Community</a>
+      · <a href="../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>

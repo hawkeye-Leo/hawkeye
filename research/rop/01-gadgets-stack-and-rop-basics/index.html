@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 1: ROP basics — gadgets &amp; stack layout — Hawkeye Research</title>
+  <meta name="description" content="Return-oriented programming on Windows x64: ret and stack layout, Hawkeye ROP/Lab, GetDC(NULL) via pop rcx; ret, ROP vs shellcode.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/rop/01-gadgets-stack-and-rop-basics/">
+  <link rel="stylesheet" href="../../../site.css?v=20261022">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <header class="article-hero rop-hero">
+      <p class="kicker"><a href="../../">Research</a> · <a href="../">ROP</a></p>
+      <p class="rop-series-badge">Part 1 of 4</p>
+      <h2>Return-Oriented Programming (ROP)</h2>
+      <p class="lead">Exploring technical boundaries related to game security</p>
+    </header>
+
+    <nav class="guide-nav guide-nav--rop-series" aria-label="Series">
+      <strong class="guide-nav-title">Series</strong>
+      <ol class="series-toc">
+        <li class="is-current">
+          <span class="num">01</span>
+          <span class="label">What ROP is — principles and first look</span>
+          <span class="tag">This article</span>
+        </li>
+        <li class="is-upcoming">
+          <span class="num">02</span>
+          <span class="label">First lab — MessageBox via ROP &amp; clean exit</span>
+          <span class="tag tag--planned">Planned</span>
+        </li>
+        <li class="is-upcoming">
+          <span class="num">03</span>
+          <span class="label">Deeper dive — ROP limits in game security</span>
+          <span class="tag tag--planned">Planned</span>
+        </li>
+        <li class="is-upcoming">
+          <span class="num">04</span>
+          <span class="label">Anti-cheat thinking &amp; detection</span>
+          <span class="tag tag--planned">Planned</span>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="rop-article">
+
+    <article class="guide-step guide-step--rop">
+      <strong>1. What ROP is — principles and first look</strong>
+      <p>
+        <strong>1.</strong> Return-oriented programming builds on the detail that <strong>ret = pop + jmp</strong>.
+        If we place an address at the right stack slot and execute <strong>ret</strong>, we pop that value into
+        <strong>RIP</strong> and can steer the CPU in a controlled way.
+      </p>
+      <p>
+        <strong>2.</strong> With several addresses on the stack and repeated <strong>ret</strong> execution,
+        we can change control flow multiple times. That is ROP.
+      </p>
+      <p class="rop-sublead">A minimal model:</p>
+      <pre class="flow-block stack-diagram">                    Thread stack                    High address
+                    ┌────────────────────────────────┐
+                    │  Addr F                        │
+                    │  Addr E                        │
+                    │  Addr D                        │
+                    │  Addr C                        │
+                    │  Addr B                        │
+                    │  Addr A          &lt;── RSP      │
+                    └────────────────────────────────┘
+                                                   Low address</pre>
+      <p>Suppose addresses A through F each point to a <strong>ret</strong> instruction in some module.</p>
+      <ul class="rop-point-list">
+        <li>Address A = any <strong>ret</strong> in <strong>ntdll.dll</strong></li>
+        <li>Address B = any <strong>ret</strong> in <strong>user32.dll</strong></li>
+        <li>Address C = any <strong>ret</strong> in <strong>kernel32.dll</strong></li>
+        <li>&hellip;</li>
+        <li>Address F = any <strong>ret</strong> in <strong>dxgi.dll</strong></li>
+      </ul>
+      <p>
+        When <strong>ret</strong> runs,
+        <strong>ret</strong> = pop address A + jump to A + RSP points at B = <strong>RIP</strong> lands in <strong>ntdll.dll</strong>.
+        Because A itself is a <strong>ret</strong>, we continue:
+        <strong>ret</strong> = pop B + jump to B + RSP at C = <strong>RIP</strong> in <strong>user32.dll</strong>.
+        The same pattern through C&ndash;F keeps firing <strong>ret</strong> until <strong>RIP</strong> reaches <strong>dxgi.dll</strong>.
+      </p>
+      <p class="rop-callout">
+        A pointless hop across modules &mdash; but it captures the <strong>core idea of ROP</strong>:
+        with a carefully built stack layout, you steer the CPU instruction stream.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Two tools first</strong>
+      <ul class="rop-tool-list">
+        <li><strong>Hawkeye ROP</strong> — Windows gadget search (ROP &ldquo;parts&rdquo; finder)</li>
+        <li><strong>Hawkeye Lab</strong> — kernel-assisted cheat detection / evaluation for games</li>
+      </ul>
+      <p>
+        <strong>Next step:</strong> suppose we want <code>HDC hDC = GetDC(NULL);</code>.
+        Under the <strong>x64</strong> calling convention, <strong>rcx, rdx, r8, r9</strong> hold the first four arguments.
+        For <code>GetDC(NULL)</code> we need the first argument (<strong>rcx</strong>) to be <strong>0</strong> before entering <strong>GetDC</strong>.
+        The obvious gadget is <code>mov rcx, 0; ret</code> &mdash; assign and return in one shot.
+        In real modules, &ldquo;write register + immediate ret&rdquo; sequences are uncommon and hard to find.
+        A practical equivalent: place constant <strong>0</strong> on the stack and use <code>pop rcx; ret</code> to load <strong>rcx</strong>
+        (see the <a href="#stack-pop-rcx">thread stack sketch</a> below).
+      </p>
+      <p><span class="rop-sublead">Overview</span> using <strong>notepad.exe</strong> as the target process.</p>
+      <p>
+        <strong>1.</strong> <strong>Hawkeye ROP</strong> searches for <strong>gadgets</strong> (short code snippets).
+        We see many <code>pop rcx; ret</code> hits, as in Fig.&nbsp;2. We usually prefer gadgets in <strong>ntdll.dll</strong>.
+        <strong>Reason:</strong> almost every process loads <strong>ntdll</strong>.
+      </p>
+      <p>
+        <strong>2.</strong> <strong>Hawkeye Lab</strong>: after discovery, gadgets must be validated. Relocation fixups in executable
+        regions can accidentally match gadget byte patterns &mdash; avoid those hits when you can.
+      </p>
+      <p>
+        <strong>3.</strong> Gadgets do not require instruction <strong>alignment</strong> in the sense used here.
+        As Fig.&nbsp;1 shows, <code>pop rcx; ret</code> encodes as <strong>0x59 0xC3</strong>.
+        Address <code>0x00007ffc8e5877fe</code> can serve as a gadget entry; <strong>Hawkeye ROP</strong> supports truncated search.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/2.png" alt="Fig. 1 pop rcx; ret and misaligned entry" loading="lazy">
+        <figcaption>Fig. 1</figcaption>
+      </figure>
+      <figure class="figure rop-figure">
+        <img src="images/1.png" alt="Fig. 2 Hawkeye ROP search for pop rcx; ret" loading="lazy">
+        <figcaption>Fig. 2</figcaption>
+      </figure>
+      <p class="rop-sublead">Thread stack sketch</p>
+      <pre class="flow-block stack-diagram" id="stack-pop-rcx">                    Thread stack                    High address
+                    ┌────────────────────────────────┐
+                    │  Addr E                        │
+                    │  Addr D                        │  (4)
+                    │  Addr C                        │  (3)
+                    │  Addr B  next gadget addr      │  (2)
+                    │  0ull            &lt;── RSP      │  (1)
+                    └────────────────────────────────┘
+                                                   Low address</pre>
+      <p>Suppose <strong>RIP &rarr; 7ffc8e58429e</strong> and <strong>RSP &rarr; (1)</strong>. What happens?</p>
+      <ol class="rop-point-list">
+        <li><strong>pop rcx</strong> pops <strong>0ull</strong> into <strong>rcx</strong>; <strong>RSP</strong> moves to <strong>(2)</strong></li>
+        <li><strong>ret</strong> pops the next gadget address into <strong>RIP</strong>; <strong>RSP</strong> moves to <strong>(3)</strong></li>
+      </ol>
+      <p><strong>RIP</strong> now runs the second gadget. We have completed <strong>rcx = 0</strong>.</p>
+      <p class="rop-callout"><strong>What is the heart of ROP?</strong> A deliberate stack layout, advanced one step at a time.</p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>How is ROP different from shellcode?</strong>
+      <p>Compare implementation, detection, and engineering cost:</p>
+      <ol class="rop-point-list">
+        <li><strong>Shellcode</strong> is executable bytes you bring in; you typically allocate or map RWX memory and point <strong>RIP</strong> there.</li>
+        <li><strong>Shellcode</strong> byte patterns are relatively stable and easy to signature; with <strong>DEP / NX</strong>, &ldquo;write then execute&rdquo; is often blocked.</li>
+        <li><strong>Shellcode</strong> is flexible: you can use <strong>push / pop</strong> freely without planning every stack slot like ROP.</li>
+        <li><strong>ROP</strong> chains existing in-process <strong>gadgets</strong>; intent lives in the return-address chain, not a fixed instruction template.</li>
+        <li><strong>ROP</strong> jumps within legitimate module code and is less constrained by <strong>DEP / NX</strong>; control-flow integrity features such as <strong>CET</strong> are a separate topic (later in this series).</li>
+        <li><strong>ROP</strong> is harder to build: even with search tools or AI help, missing gadgets force module swaps and compromises.</li>
+        <li><strong>ROP</strong> cannot abuse <strong>push / pop</strong> gadgets casually &mdash; they disturb the stack. <strong>Winning moves are careful stack design and stepwise execution.</strong></li>
+      </ol>
+    </article>
+
+    <article class="guide-step guide-step--rop rop-part-summary">
+      <strong>Summary</strong>
+      <p>
+        We started from <strong>ret</strong> and the stack: ROP is a chain of return addresses consumed by repeated
+        <strong>ret</strong> instructions, steering <strong>RIP</strong> through existing <strong>gadgets</strong>.
+      </p>
+      <ul class="rop-point-list">
+        <li><code>GetDC(NULL)</code> on x64 needs <strong>rcx = 0</strong>; ideal <code>mov rcx, 0; ret</code> is rare &mdash; stack <strong>0</strong> plus <code>pop rcx; ret</code> is the practical path.</li>
+        <li><strong>Hawkeye ROP</strong> finds gadgets; <strong>Hawkeye Lab</strong> validates them in a live process. Watch relocation false positives and how &ldquo;truncated&rdquo; entries relate to alignment in this article.</li>
+        <li>Vs shellcode: ROP reuses in-process <strong>gadgets</strong> instead of injecting a shellcode blob, which is friendlier to <strong>DEP / NX</strong> but demands tighter stack discipline and more engineering; <strong>CET</strong> will spread with newer hardware and Windows&nbsp;11 generations.</li>
+      </ul>
+      <p><strong>Next:</strong> we target a Notepad process, build a full ROP chain to show a <strong>MessageBox</strong>, and exit cleanly.</p>
+      <p>We will also tackle shadow space (the x64 home stack) and what it means for ROP layout.</p>
+    </article>
+
+    <article class="guide-step guide-step--rop" id="opensource">
+      <strong>Open source</strong>
+      <p>Related Hawkeye repositories for this series:</p>
+      <ul class="article-list">
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-rop">github.com/hawkeye-Leo/hawkeye-rop</a>
+          — Hawkeye ROP (gadget finder)
+          · <a href="https://github.com/hawkeye-Leo/hawkeye-rop/releases">Releases</a>
+        </li>
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a>
+          — Hawkeye Community
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop guide-step--next">
+      <strong>Up next</strong>
+      <p>First lab — MessageBox via ROP &amp; clean exit.</p>
+    </article>
+
+    <p class="article-nav article-nav--rop"><a href="../">&larr; ROP series</a></p>
+
+    </div>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>
