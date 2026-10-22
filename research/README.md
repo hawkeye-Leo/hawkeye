@@ -19,6 +19,9 @@ research/
     01-gadgets-stack-and-rop-basics/
       index.html
       images/
+    02-messagebox-and-safe-exit/
+      index.html
+      images/
 ```
 
 ## Adding an article
