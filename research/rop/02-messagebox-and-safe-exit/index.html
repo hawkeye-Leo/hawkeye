@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 2: MessageBox lab &amp; clean exit — Hawkeye Research</title>
+  <meta name="description" content="ROP lab: CreateRemoteThread, 1 MiB A/B/C layout, MessageBoxA, RtlExitUserThread, shadow space.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/rop/02-messagebox-and-safe-exit/">
+  <link rel="stylesheet" href="../../../site.css?v=20261022">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <header class="article-hero rop-hero">
+      <p class="kicker"><a href="../../">Research</a> · <a href="../">ROP</a></p>
+      <p class="rop-series-badge">Part 2 of 4</p>
+      <h2>Return-Oriented Programming (ROP)</h2>
+      <p class="lead">Exploring technical boundaries related to game security<span class="rop-lead-part" title="Part 2 of the series">2</span></p>
+    </header>
+
+    <nav class="guide-nav guide-nav--rop-series" aria-label="Series">
+      <strong class="guide-nav-title">Series</strong>
+      <ol class="series-toc">
+        <li>
+          <span class="num">01</span>
+          <span class="label"><a href="../01-gadgets-stack-and-rop-basics/index.html">What ROP is — principles and first look</a></span>
+        </li>
+        <li class="is-current">
+          <span class="num">02</span>
+          <span class="label">First lab — MessageBox via ROP &amp; clean exit</span>
+          <span class="tag">This article</span>
+        </li>
+        <li class="is-upcoming">
+          <span class="num">03</span>
+          <span class="label">Deeper dive — ROP limits in game security</span>
+          <span class="tag tag--planned">Planned</span>
+        </li>
+        <li class="is-upcoming">
+          <span class="num">04</span>
+          <span class="label">Anti-cheat thinking &amp; detection</span>
+          <span class="tag tag--planned">Planned</span>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="rop-article">
+
+    <article class="guide-step guide-step--rop">
+      <div class="rop-part-intro">
+        <p class="rop-series-prev">
+          Previously: <a href="../01-gadgets-stack-and-rop-basics/index.html">Part 1 — ROP basics</a>
+        </p>
+        <p class="rop-intro-lead">Part 1 covered how ROP works in principle.</p>
+        <p class="rop-intro-lead">In this lab we use <strong>notepad.exe</strong>: a ROP chain calls <strong>MessageBox</strong>; after OK, execution ends cleanly.</p>
+        <p class="rop-effect-lead">Result (Fig.&nbsp;1):</p>
+        <figure class="figure rop-figure rop-figure--effect">
+          <img src="images/3.png" alt="Fig. 1 MessageBox in notepad.exe" loading="lazy">
+          <figcaption>Fig. 1 · Runtime result</figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Classic shellcode approach</strong>
+      <p>A quick recap of a typical shellcode workflow:</p>
+      <p><strong>1.</strong> <strong>OpenProcess</strong> on the target</p>
+      <p><strong>1.</strong> <strong>VirtualAllocEx</strong> (RWX) in the remote process</p>
+      <p><strong>2.</strong> <strong>WriteProcessMemory</strong> for the shellcode</p>
+      <p><strong>3.</strong> <strong>CreateRemoteThread</strong> to run it</p>
+      <p><strong>Shellcode (Fig.&nbsp;2):</strong></p>
+      <figure class="figure rop-figure">
+        <img src="images/1.png" alt="Fig. 2 shellcode example" loading="lazy">
+        <figcaption>Fig. 2</figcaption>
+      </figure>
+      <p>
+        Shellcode can use the stack freely: <strong>push</strong>, <strong>pop</strong>, <strong>call</strong> without the layout constraints ROP imposes.
+        Like normal code, instructions drive control flow; the stack holds temporaries, arguments, and call frames — roles stay separate.
+      </p>
+      <p class="rop-sublead">ROP is different (Fig.&nbsp;3):</p>
+      <figure class="figure rop-figure">
+        <img src="images/2.png" alt="Fig. 3 ROP chain on the stack" loading="lazy">
+        <figcaption>Fig. 3</figcaption>
+      </figure>
+      <p>
+        With ROP, the stack also carries control flow. (Fig.&nbsp;3) shows the chain: a sequence of 8-byte slots in stack memory.
+        Most entries are gadget addresses (resolved at build time) or immediates (like the <strong>0</strong> for <strong>rcx</strong> in Part 1).
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>I. Overall memory layout</strong>
+      <p>
+        For this lab we only need <strong>MessageBoxA</strong> and <strong>RtlExitUserThread</strong>, so one remote allocation can hold
+        the main ROP chain, string data, and stack space for Win32 API calls.
+      </p>
+      <p class="rop-callout">
+        The demo uses <strong>1&nbsp;MiB</strong> for easy inspection; for this chain alone, on the order of <strong>4&nbsp;KiB</strong> is often enough.
+      </p>
+      <p class="rop-sublead">High to low address, the 1&nbsp;MiB block splits into three regions:</p>
+      <pre class="flow-block stack-diagram">              1 MiB remote block                    high
+              ┌──────────────────────────────────┐
+              │  A · 4 KiB · ROP chain (control)   │
+              ├──────────────────────────────────┤
+              │  B · 4 KiB · data (strings, etc.)  │
+              ├──────────────────────────────────┤
+              │  C · rest · MessageBoxA stack      │
+              │         + return pivot reservation │
+              └──────────────────────────────────┘
+                                                   low</pre>
+      <figure class="figure rop-figure">
+        <img src="images/4.png" alt="Fig. 4 A B C regions" loading="lazy">
+        <figcaption>Fig. 4 · A / B / C (matches diagram above)</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>II. The hard first step: CreateRemoteThread</strong>
+      <p>
+        <strong>Entry gadget:</strong>
+        <code>push rcx; pop rsp; ret</code> (chain entry pivot)
+      </p>
+      <pre class="flow-block">CreateRemoteThread
+  lpStartAddress : address of the entry gadget
+  lpParameter    : base of region A (blockBase + 0xFF000) → start of ROP chain
+
+DWORD WINAPI ThreadProc(
+  _In_ LPVOID lpParameter    // first arg rcx → A base (blockBase + 0xFF000)
+);</pre>
+      <p><strong>Walkthrough:</strong></p>
+      <ol class="rop-point-list">
+        <li>
+          <strong>push rcx</strong>: at thread entry, <strong>rcx</strong> is <strong>lpParameter</strong> — the base of region A
+          (<code>blockBase + 0xFF000</code>), i.e. the start of the main chain.
+        </li>
+        <li>
+          <strong>pop rsp</strong>: <strong>RSP</strong> moves to the A-region chain at <code>blockBase + 0xFF000</code>; further
+          <strong>ret</strong> steps consume qwords from that chain.
+        </li>
+        <li>
+          <strong>ret</strong>: pops the next hop from <code>[0] A+0x00</code> into <code>gadget_pop_rcx_ret</code>
+          (<code>pop rcx; ret</code>, first gadget on the chain in Fig.&nbsp;3).
+        </li>
+        <li>From here, the thread follows the ROP chain.</li>
+      </ol>
+      <p class="rop-callout">
+        <strong>Q:</strong> Why not <code>mov rsp, rcx; ret</code> as the entry? That would pivot in one step.<br>
+        <strong>A:</strong> In theory, yes — <strong>rcx</strong> already holds the A base. In practice that exact gadget is often
+        missing (confirm per process with your ROP search tool). ROP only reuses bytes that exist; when the short path is unavailable,
+        you combine equivalents (e.g. <code>push rcx; pop rsp; ret</code>) or pick another launch path.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>III. MessageBoxA — four arguments</strong>
+      <p>
+        The gadgets highlighted in Fig.&nbsp;5 set <strong>rcx, rdx, r8, r9</strong> before <strong>MessageBoxA</strong>:
+        two immediates and two pointers to strings in region B:
+      </p>
+      <ul class="rop-point-list">
+        <li><strong>rcx</strong> (<code>hWnd</code>): parent window — <strong>0</strong> (<code>NULL</code>) in this lab</li>
+        <li><strong>rdx</strong> (<code>lpText</code>): body text → string in region B</li>
+        <li><strong>r8</strong> (<code>lpCaption</code>): caption → string in region B</li>
+        <li><strong>r9</strong> (<code>uType</code>): buttons/style — <strong>0</strong> (<code>MB_OK</code>)</li>
+      </ul>
+      <figure class="figure rop-figure">
+        <img src="images/5.png" alt="Fig. 5 MessageBoxA argument gadgets" loading="lazy">
+        <figcaption>Fig. 5</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>IV. Pivot RSP to region C</strong>
+      <p>
+        Gadgets in Fig.&nbsp;6 pivot <strong>RSP</strong> from region A (main chain) to <strong>C</strong> before <strong>MessageBoxA</strong>.
+        The API uses stack space for arguments and prologue saves; depth is hard to bound. Growth on A could overwrite <strong>B</strong>.
+        Region <strong>C</strong> is dedicated stack for this call.
+      </p>
+      <p class="rop-callout">
+        In red-team scenarios, ROP may only spawn a shell process; host crash may be acceptable — no careful
+        &ldquo;stack layout work&rdquo; required. Backdoors or game-side tooling that must stay stable need that layout done properly.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/6.png" alt="Fig. 6 pivot RSP to region C" loading="lazy">
+        <figcaption>Fig. 6</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>V. After MessageBoxA — back to the main chain</strong>
+      <p>
+        Gadgets in Fig.&nbsp;6 (continued) run after <strong>MessageBoxA</strong> returns: <strong>RSP</strong> pivots back to the
+        A-region main chain so later logic can run.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/7.png" alt="Fig. 6 continued return to main chain" loading="lazy">
+        <figcaption>Fig. 6 (continued)</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>VI. Exit: RtlExitUserThread</strong>
+      <p>Gadgets in Fig.&nbsp;7: call <strong>RtlExitUserThread</strong> to end the thread cleanly.</p>
+      <p class="rop-callout">
+        <strong>Note:</strong> Because this API terminates the thread, we do not pivot <strong>RSP</strong> again — we no longer care
+        if the function touches region <strong>B</strong> during its prologue.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/8.png" alt="Fig. 7 RtlExitUserThread" loading="lazy">
+        <figcaption>Fig. 7</figcaption>
+      </figure>
+      <p>That closes the loop for this ROP lab.</p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Closing questions</strong>
+
+      <p class="rop-sublead"><strong>Question 1</strong></p>
+      <p>
+        <strong>Q:</strong> What if <code>push rcx; pop rsp; ret</code> is not available in the target process?
+      </p>
+      <p>
+        <strong>A:</strong> Common — module mix varies. Alternatives:
+      </p>
+      <ol class="rop-point-list">
+        <li><strong>SetThreadContext</strong>: set <strong>RIP / RSP</strong> to region A and skip the entry pivot.</li>
+        <li><strong>PE code cave</strong>: patch bytes temporarily, run, then restore.</li>
+      </ol>
+
+      <p class="rop-sublead"><strong>Question 2</strong></p>
+      <p>
+        <strong>Q:</strong> What is shadow space? How does it affect ROP? How do you work around it?
+      </p>
+      <p>
+        <strong>A:</strong> On x64 Windows, many prologues write to <strong>[rsp + offset]</strong> (home space for register args).
+        Tight stack layout in regions A/C can be overwritten by a Win32 API prologue, breaking the return layout in Fig.&nbsp;6.
+      </p>
+      <p>
+        You need not drop the API or pick a random &ldquo;equivalent&rdquo; wrapper; often you go deeper in the call chain
+        (e.g. <strong>NtGdiSetPixel</strong> instead of <strong>SetPixel</strong>). Lower-level routines tend to be cleaner for
+        gadget choice and debugging.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/9.png" alt="Shadow space illustration 1" loading="lazy">
+        <figcaption>Shadow space (1)</figcaption>
+      </figure>
+      <figure class="figure rop-figure">
+        <img src="images/10.png" alt="Shadow space illustration 2" loading="lazy">
+        <figcaption>Shadow space (2)</figcaption>
+      </figure>
+
+      <p class="rop-sublead"><strong>Question 3</strong></p>
+      <p><strong>Q:</strong> Can ROP implement highly complex behavior?</p>
+      <p>
+        <strong>A:</strong> Yes. Part 3 covers larger ROP programs: structure, private stacks, and coordinating multiple APIs.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop rop-part-summary">
+      <strong>Summary</strong>
+      <ul class="rop-point-list">
+        <li>
+          We map <strong>1&nbsp;MiB</strong> remote memory (A chain / B data / C API stack), use
+          <strong>CreateRemoteThread</strong> + <code>push rcx; pop rsp; ret</code> to pivot <strong>RSP</strong> onto A, then run
+          <strong>MessageBoxA</strong> and <strong>RtlExitUserThread</strong>.
+        </li>
+        <li>
+          Before Win32 APIs, pivot <strong>RSP</strong> to <strong>C</strong> so API stack use does not corrupt <strong>B</strong> or the main chain;
+          pivot back when returning to the chain.
+        </li>
+        <li>
+          Missing entry pivots → <strong>SetThreadContext</strong> or code caves; <strong>shadow space</strong> writes at
+          <code>[rsp+…]</code> — mitigate by choosing lower-level callees where needed.
+        </li>
+      </ul>
+      <p><strong>Next:</strong> Part 3 — ROP capability boundaries in game security (high-complexity ROP design).</p>
+    </article>
+
+    <article class="guide-step guide-step--rop" id="opensource">
+      <strong>Open source</strong>
+      <p>Related Hawkeye repositories:</p>
+      <p>
+        Demo for this article:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-rop/tree/main/Demo/notepad-test">Demo/notepad-test</a>
+      </p>
+      <ul class="article-list">
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-rop">github.com/hawkeye-Leo/hawkeye-rop</a>
+          — Hawkeye ROP (gadget finder)
+          · <a href="https://github.com/hawkeye-Leo/hawkeye-rop/releases">Releases</a>
+        </li>
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a>
+          — Hawkeye Community
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop guide-step--next">
+      <strong>Up next</strong>
+      <p>Deeper dive — ROP limits in game security.</p>
+    </article>
+
+    <p class="article-nav article-nav--rop">
+      <a href="../01-gadgets-stack-and-rop-basics/index.html">&larr; Part 1</a>
+      · <a href="../">ROP series</a>
+    </p>
+
+    </div>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>

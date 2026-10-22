@@ -41,10 +41,9 @@
           <span class="label">What ROP is — principles and first look</span>
           <span class="tag">This article</span>
         </li>
-        <li class="is-upcoming">
+        <li>
           <span class="num">02</span>
-          <span class="label">First lab — MessageBox via ROP &amp; clean exit</span>
-          <span class="tag tag--planned">Planned</span>
+          <span class="label"><a href="../02-messagebox-and-safe-exit/index.html">First lab — MessageBox via ROP &amp; clean exit</a></span>
         </li>
         <li class="is-upcoming">
           <span class="num">03</span>
@@ -186,8 +185,12 @@
         <li><strong>Hawkeye ROP</strong> finds gadgets; <strong>Hawkeye Lab</strong> validates them in a live process. Watch relocation false positives and how &ldquo;truncated&rdquo; entries relate to alignment in this article.</li>
         <li>Vs shellcode: ROP reuses in-process <strong>gadgets</strong> instead of injecting a shellcode blob, which is friendlier to <strong>DEP / NX</strong> but demands tighter stack discipline and more engineering; <strong>CET</strong> will spread with newer hardware and Windows&nbsp;11 generations.</li>
       </ul>
-      <p><strong>Next:</strong> we target a Notepad process, build a full ROP chain to show a <strong>MessageBox</strong>, and exit cleanly.</p>
-      <p>We will also tackle shadow space (the x64 home stack) and what it means for ROP layout.</p>
+      <p>
+        <strong>Next:</strong>
+        <a href="../02-messagebox-and-safe-exit/index.html">Part 2 — MessageBox lab &amp; clean exit</a>:
+        we target <strong>notepad.exe</strong>, build a full ROP chain to show a <strong>MessageBox</strong>, and exit cleanly.
+      </p>
+      <p>We also cover shadow space (the x64 home stack) and what it means for ROP layout.</p>
     </article>
 
     <article class="guide-step guide-step--rop" id="opensource">
@@ -208,10 +211,13 @@
 
     <article class="guide-step guide-step--rop guide-step--next">
       <strong>Up next</strong>
-      <p>First lab — MessageBox via ROP &amp; clean exit.</p>
+      <p><a href="../02-messagebox-and-safe-exit/index.html">First lab — MessageBox via ROP &amp; clean exit</a>.</p>
     </article>
 
-    <p class="article-nav article-nav--rop"><a href="../">&larr; ROP series</a></p>
+    <p class="article-nav article-nav--rop">
+      <a href="../">&larr; ROP series</a>
+      · <a href="../02-messagebox-and-safe-exit/index.html">Part 2 &rarr;</a>
+    </p>
 
     </div>
 
