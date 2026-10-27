@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>鹰眼游戏安全实验室 &mdash; Hawkeye Lab 中文版</title>
+  <meta name="description" content="Hawkeye Lab 中文版：Windows 内核研究控制台，自动化高风险行为检测、!analyze 工作流与评分报告。基于 Hawkeye Community。$35/月。">
+  <meta name="keywords" content="Hawkeye Lab, Hawkeye Community, Windows kernel security, anti-cheat research, memory forensics, behavior detection, kernel driver analysis">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/lab/zh/">
+  <meta property="og:title" content="鹰眼游戏安全实验室">
+  <meta property="og:description" content="内核研究控制台：自动化检测与分析报告。Hawkeye Community 订阅版。">
+  <meta property="og:url" content="https://hawkeye-leo.github.io/hawkeye/lab/zh/">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="../../site.css?v=20260909">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">研究控制台</span></h1>
+      </div>
+      <nav class="tabs" aria-label="站点">
+        <a href="../../">Community</a>
+        <a href="../">Lab</a>
+        <a class="active" href="./">鹰眼游戏安全实验室</a>
+        <a href="../../research/">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="kicker">Hawkeye Lab · 仿真与检测 · 分析报告</p>
+    <h2>研究，一款专业的生产力工具</h2>
+    <p class="lead">
+      Hawkeye Lab 是在长期研究基础上打造的专业生产力工具。
+      它自动化高风险行为检测、生成分析报告，并依托<strong>行为特征库</strong>，让整套流程更省力。
+    </p>
+    <p class="lead-note">
+      <strong>行为特征库</strong>决定每份分析报告的形态：Lab 运行的检测维度，以及每个维度后的 Assessment 文本&mdash;&mdash;发现意味着什么、如何解读。
+    </p>
+    <p class="lead-note">
+      <strong>宿主机原生内核驱动</strong>&mdash;&mdash;现场检测，不依赖基于 VT 或虚拟机层的内省。
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="../early-access/">订阅</a>
+      <a class="btn btn-ghost" href="../../">打开 Community</a>
+    </div>
+
+    <aside class="lab-pricing" aria-label="Lab 定价">
+      <div class="lab-pricing-row">
+        <div class="lab-pricing-price">
+          <span class="lab-pricing-amount">$35</span>
+          <span class="lab-pricing-period">/ 月</span>
+          <a class="lab-pricing-badge" href="../early-access/">现已开放</a>
+        </div>
+        <div class="lab-pricing-copy">
+          <p>
+            Lab 包含 Community 的全部能力。建议先
+            <a href="https://github.com/hawkeye-Leo/hawkeye-community/releases/latest">试用 Community</a>
+            ，确认本机驱动环境可用。
+          </p>
+          <p class="lab-pricing-adds">
+            下方卡片为 Lab 相对 Community 的增量&mdash;&mdash;高风险检测、<code>!analyze</code>，以及在 Community 工作台上的评分报告。
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <section class="card edition-compare" aria-label="Community 与 Lab">
+      <h3>Community 与 Lab</h3>
+      <table class="edition-compare-table">
+        <thead>
+          <tr>
+            <th scope="col">能力</th>
+            <th scope="col" class="col-yes">Community</th>
+            <th scope="col" class="col-yes">Lab</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">实时控制台 + 驱动配置</th>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>!probe</code>、<code>!etw</code>、内存工具</th>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">高风险检测命令</th>
+            <td class="col-no" aria-label="不包含">&mdash;</td>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row"><code>!analyze</code>（20 项检测工作流）</th>
+            <td class="col-no" aria-label="不包含">&mdash;</td>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">评分分析报告（PDF / 文本）</th>
+            <td class="col-no" aria-label="不包含">&mdash;</td>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+          </tr>
+          <tr>
+            <th scope="row">Lab <code>-demo</code> 仿真 staging</th>
+            <td class="col-no" aria-label="不包含">&mdash;</td>
+            <td class="col-yes" aria-label="包含">&#10003;</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="edition-compare-foot">
+        Community：GPL-3.0-or-later · Lab：订阅制（$35 / 月）。
+      </p>
+    </section>
+
+    <div class="grid two">
+      <article class="card">
+        <h3><a href="../../#probe"><code>!probe</code></a></h3>
+        <p>实时符号上下文。附加到进程后，可批量搜索符号名。</p>
+      </article>
+      <article class="card">
+        <h3><a href="../../#etw"><code>!etw</code></a></h3>
+        <p>在短窗口内采样 CPU 实际执行过的指令指针。可按进程、线程或全系统。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#cross-rw"><code>!cross_rw</code></a></h3>
+        <p>在短窗口内对全系统线程采样，检测针对目标进程的跨进程读/写。可用于游戏或任意关注进程。<code>!cross_rw_sim</code> 可 staging 一例。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#phys-read"><code>!phys_read</code></a></h3>
+        <p>检测通过 <code>MmCopyMemory</code>（<code>MM_COPY_MEMORY_PHYSICAL</code>）的物理内存读取。<code>!phys_read_sim</code> 可 staging 一例。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#map-io"><code>!map_io</code></a></h3>
+        <p>检测内核通过 <code>MmMapIoSpace</code> 对进程地址的映射&mdash;&mdash;<code>MmNonCached</code> 与 <code>MmCached</code>。<code>!map_io_sim</code> 可 staging 两种模式。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#active-pages"><code>!active_pages</code></a></h3>
+        <p>在短窗口内记录目标进程虚拟地址空间中的活跃页&mdash;&mdash;RWX 或 RX。用户态或内核。<code>!active_pages_sim</code> 可 staging 两者。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#hidden-windows"><code>!hidden_windows</code></a></h3>
+        <p>检测 DisplayAffinity 路径上的隐藏窗口&mdash;&mdash;<code>SetWindowDisplayAffinity</code> 或 <code>win32kfull!ChangeWindowTreeProtection</code>。<code>!hidden_windows_sim</code> 会隐藏 Hawkeye 自身主窗口。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#hidden-visuals"><code>!hidden_visuals</code></a></h3>
+        <p>检测对截屏隐藏的 Visual&mdash;&mdash;进程内或跨进程，可绑定到其他进程窗口。<code>!hidden_visuals_sim</code> 可在本地 staging 一个 Visual。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#ukexec"><code>!ukexec</code></a></h3>
+        <p>检测进程地址空间中内核区域里仍可被用户访问的可执行页&mdash;&mdash;较新的注入手法。<code>!ukexec_sim</code> 可 staging 一例。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#hidden-process"><code>!hidden_process</code></a></h3>
+        <p>检测仍在运行但未出现在系统常规列表中的进程与线程。使用 <code>!hidden_process -run</code>。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#analyze"><code>!analyze</code></a></h3>
+        <p>可用自写插件自动收集线索，或手动指定目标 PID 与敏感地址。Hawkeye 据此运行检测并生成报告。</p>
+      </article>
+      <article class="card">
+        <h3><a href="#invlpg">INVLPG / special instructions</a></h3>
+        <p>
+          基于 <code>!active_pages</code>：对活跃内存做自动指令识别。
+          覆盖 INVLPG、特殊指令、虚拟化相关 opcode 等。
+        </p>
+      </article>
+    </div>
+
+    <section>
+      <h3>图文指南</h3>
+      <p>
+        本页包含检测与 <code>!analyze</code> 的图文说明。
+        Lab 亦包含 Community 全部命令&mdash;&mdash;驱动配置、<code>!probe</code>、<code>!etw</code>、内存等见 Community 页。
+        运行 <code>!help</code> 查看完整目录；任意命令不带参数运行可查看用法。
+      </p>
+      <nav class="guide-nav guide-nav--split-8" id="guide-toc" aria-label="指南目录">
+        <strong>本页目录</strong>
+        <ol>
+          <li><a href="#plugin">线索 &mdash; 插件</a></li>
+          <li><a href="#complete-run">完整跑通一次</a></li>
+          <li><a href="#same-setup">与 Community 相同的环境</a></li>
+          <li><a href="../../#probe"><code>!probe</code><span class="guide-toc-note">Community</span></a></li>
+          <li><a href="../../#etw"><code>!etw</code><span class="guide-toc-note">Community</span></a></li>
+          <li><a href="#cross-rw"><code>!cross_rw</code></a></li>
+          <li><a href="#phys-read"><code>!phys_read</code></a></li>
+          <li><a href="#map-io"><code>!map_io</code></a></li>
+          <li><a href="#active-pages"><code>!active_pages</code></a></li>
+          <li><a href="#hidden-windows"><code>!hidden_windows</code></a></li>
+          <li><a href="#hidden-visuals"><code>!hidden_visuals</code></a></li>
+          <li><a href="#ukexec"><code>!ukexec</code></a></li>
+          <li><a href="#hidden-process"><code>!hidden_process</code></a></li>
+          <li><a href="#invlpg">INVLPG / 特殊指令</a></li>
+          <li><a href="#analyze"><code>!analyze</code></a></li>
+        </ol>
+      </nav>
+      <article class="guide-step" id="plugin">
+        <strong>1. 线索 &mdash; 插件</strong>
+        <p>
+          <code>!analyze</code> 不会自行猜测目标，需要<strong>线索</strong>：
+          哪个进程，以及该进程中哪些地址被你视为高风险。
+        </p>
+        <p>
+          Lab 自带 <code>HawkHotTargets.dll</code>（位于
+          <code>plugins\</code>）。内置插件会 staging 一个检测目标：打开标题为
+          <strong>Hawkeye Lab target -- do not close</strong> 的记事本，
+          再把该 PID 与两个固定地址交给 Hawkeye&mdash;&mdash;
+          该进程中 <code>notepad.exe</code> 的 PE 头，以及
+          <code>ntdll.dll</code> 的 PE 头。
+        </p>
+        <p>
+          可替换为自研插件。示例见 Community 仓库中的
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community/tree/main/samples/HawkHotTargets"><code>samples\HawkHotTargets</code></a>。
+          例如游戏安全工程师编写代码，向 Hawkeye 提供游戏进程 PID 与进程内敏感地址；
+          Hawkeye 据此运行自动化检测，查找可疑行为。
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="complete-run">
+        <strong>2. 完整跑通一次</strong>
+        <p>
+          Community 是研究控制台；Lab 在同一底座上，并预置为可跑通的案例。
+          第 1 步的插件提供线索；内置一次完整运行会仿真行为、执行检测并写出分析报告&mdash;&mdash;
+          新手可借此了解 Lab 能做什么。
+        </p>
+        <p>
+          在本机运行前，请先完成
+          <a href="../../#driver-setup">Community 驱动配置</a>，
+          确认状态栏为 <strong>Driver OK</strong>。
+          输入 <code>!analyze -load -run -demo</code>。
+          Demo 以记事本为目标；Lab 对其 staging 高风险行为&mdash;&mdash;
+          跨进程读、植入页等&mdash;&mdash;贴近真实环境的仿真。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-getting-started.png" alt="Hawkeye Lab Getting started: behavior-first, and !analyze -load -run -demo.">
+          <figcaption>图 1. 入门&mdash;&mdash;该次运行使用的命令。</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../../guide/lab-analyze-demo-1.png" alt="Hawkeye Lab !analyze demo: Notepad as the target, simulation then detection.">
+          <figcaption>图 2. 同一运行在记事本上&mdash;&mdash;先仿真，后检测。</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../../guide/lab-analyze-demo-2.png" alt="Hawkeye Lab !analyze demo later in the same run: more staged cases and detection.">
+          <figcaption>图 3. 仍为同一运行。</figcaption>
+        </figure>
+        <p>
+          运行结束后 Lab 生成 PDF：先 ANALYSIS，DETECTION 为证据附录；封面标注 DEMO 或 LIVE。
+        </p>
+        <div class="report-offer" id="analysis-report">
+          <div>
+            <span class="mode-pill">DEMO</span>
+            <div class="report-title">Hawkeye Lab 分析报告</div>
+            <p class="report-sub">本示例来自上文记事本运行；场景由 Lab staging，非真实事件。</p>
+          </div>
+          <a class="btn btn-primary" href="../../guide/hawkeye-lab-analyze-demo.pdf" target="_blank" rel="noopener">查看示例报告</a>
+        </div>
+        <div class="report-offer">
+          <div>
+            <span class="mode-pill-live">LIVE</span>
+            <div class="report-title">Hawkeye Lab 分析报告</div>
+            <p class="report-sub">来自 <code>-live</code> 运行&mdash;&mdash;仅检测、不仿真；版式相同，封面为 LIVE。</p>
+          </div>
+          <a class="btn btn-primary" href="../../guide/hawkeye-lab-analyze-live.pdf" target="_blank" rel="noopener">查看 LIVE 示例</a>
+        </div>
+        <p>
+          本机文件保存在 <code>reports\</code> 目录下。
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="same-setup">
+        <strong>3. 与 Community 相同的环境</strong>
+        <p>
+          Lab 与 Community 使用相同主机环境：测试签名、管理员控制台、已加载驱动。
+          见 <a href="../../#driver-setup">Community 驱动配置</a>，
+          在任意 Lab 检测或 <code>!analyze</code> 运行前确认状态栏 <strong>Driver OK</strong>。
+        </p>
+        <p>
+          上述步骤仅在 Community 页文档化一次；驱动就绪后启动 Lab 版本即可。
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="probe">
+        <strong>4. <code>!probe</code> &mdash; 入口</strong>
+        <p>
+          Lab 包含与 Community 相同的工作台。符号上下文从
+          <code>!probe</code> 开始&mdash;&mdash;附加到进程或内核，再批量搜索符号名。
+        </p>
+        <p>
+          图文步骤见 Community 页：
+          <a href="../../#probe">第 2 步 &mdash; <code>!probe</code></a>。
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="etw">
+        <strong>5. <code>!etw</code> &mdash; 谁真正跑过</strong>
+        <p>
+          <code>!etw</code> 在短窗口内采样实际执行过的指令指针&mdash;&mdash;
+          可按进程、线程或全系统。Lab 将其与活跃页、指令解码（第 14 步）配合使用。
+        </p>
+        <p>
+          见 Community 图文说明：
+          <a href="../../#etw">第 3 步 &mdash; <code>!etw</code></a>。
+        </p>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="cross-rw">
+        <strong>6. <code>!cross_rw</code> &mdash; 还有谁在读写该进程</strong>
+        <p>
+          <code>!cross_rw</code> 监视目标 PID 的跨进程访问&mdash;&mdash;
+          如 <code>ReadProcessMemory</code> 等。窗口很短：扫描当前在 CPU 上运行的全系统线程，
+          再报告谁曾访问该进程。
+        </p>
+        <p>
+          这是工作台层面的线索，而非终局裁决。围绕游戏进程、待测构建或任意软件：
+          是否有其他主体在读取它。
+        </p>
+        <p>
+          <code>!cross_rw_sim</code> 在后台线程 staging 同类访问，便于观察检测触发。
+          两命令均可在无参数时查看用法；请对同一 PID 配对使用；
+          <code>!cross_rw_sim -stop</code> 结束仿真。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-cross-rw-usage.png" alt="Hawkeye Lab: !cross_rw and !cross_rw_sim usage in the console.">
+          <figcaption>图 6. 用法&mdash;&mdash;检测与 sim 使用相同 PID 配对。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="phys-read">
+        <strong>7. <code>!phys_read</code> &mdash; 物理内存读取</strong>
+        <p>
+          跨进程访问并非单一手法。
+          <code>!cross_rw</code> 覆盖 attach 类读取（如 <code>ReadProcessMemory</code>）；
+          <code>!phys_read</code> 覆盖另一类：
+          带 <code>MM_COPY_MEMORY_PHYSICAL</code> 的 <code>MmCopyMemory</code>&mdash;&mdash;
+          对进程地址做物理内存读。
+        </p>
+        <p>
+          <code>-pid</code> 为被读进程；<code>-va</code> 为其内虚拟地址。
+          检测与 sim 使用相同两个参数。
+        </p>
+        <p>
+          <code>!phys_read_sim</code> staging 相同
+          <code>MmCopyMemory</code>（<code>MM_COPY_MEMORY_PHYSICAL</code>）读取。
+          无参数可查看用法；请在相同 PID 与 VA 上配对。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-phys-read-usage.png" alt="Hawkeye Lab: !phys_read and !phys_read_sim usage in the console.">
+          <figcaption>图 7. 用法&mdash;&mdash;两命令使用相同 <code>-pid</code> 与 <code>-va</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="map-io">
+        <strong>8. <code>!map_io</code> &mdash; MmMapIoSpace 映射</strong>
+        <p>
+          物理内存访问同样不止一种。
+          <code>!phys_read</code> 针对 <code>MmCopyMemory</code>
+          （<code>MM_COPY_MEMORY_PHYSICAL</code>）；
+          <code>!map_io</code> 针对通过 <code>MmMapIoSpace</code>
+          对进程地址的内核映射。
+        </p>
+        <p>
+          两种缓存模式：<code>-cache:0</code> 为 <code>MmNonCached</code>，
+          <code>-cache:1</code> 为 <code>MmCached</code>。
+          <code>-pid</code> 为被映射进程，<code>-va</code> 为其虚拟地址；
+          检测与 sim 使用相同三个参数。
+        </p>
+        <p>
+          检测为概率性；默认短扫描，<code>-strong</code> 加宽窗口，建议多次运行确认。
+          <code>!map_io_sim</code> 对每种模式 staging：映射后解除，不读取。
+          无参数查看用法；请在相同 PID、VA、cache 上配对。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-map-io-usage.png" alt="Hawkeye Lab: !map_io and !map_io_sim usage in the console.">
+          <figcaption>图 8. 用法&mdash;&mdash;两命令使用相同 <code>-pid</code>、<code>-va</code>、<code>-cache</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="active-pages">
+        <strong>9. <code>!active_pages</code> &mdash; 目标进程虚拟地址空间中的活跃页</strong>
+        <p>
+          手工遍历地址空间定位恶意代码或不该存在的软件很慢。
+          <code>!active_pages</code> 在极短窗口内采样，记录该进程虚拟地址空间中曾活跃的页。
+        </p>
+        <p>
+          <code>-pid</code> 为目标进程；<code>-pid:4</code> 为内核。
+          <code>-rx:0</code> 为 RWX 页，<code>-rx:1</code> 为 RX 页。
+          <code>-pid:all</code> 遍历繁忙进程的 RWX（不含 PID 4），采集 CPU 开销更高。
+          用户态命中可与 VAD 保护对照。
+        </p>
+        <p>
+          <code>!active_pages_sim</code> 在用户态（<code>-pid</code> &gt; 4）或内核（<code>-pid:4</code>）staging 活跃页。
+          同时仅一个 sim；结束用 <code>-stop</code>。检测请在相同 PID 上配对 <code>-rx:</code>。
+          无参数可查看用法。
+        </p>
+        <p>
+          <code>-lab_miflag36</code> 为实验项：Windows 11 <code>MiFlags</code> 研究，不属于检测器本体。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-active-pages-usage.png" alt="Hawkeye Lab: !active_pages and !active_pages_sim usage in the console.">
+          <figcaption>图 9. 用法&mdash;&mdash;用户态或内核；检测在相同 PID 上配对 <code>-rx:</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="hidden-windows">
+        <strong>10. <code>!hidden_windows</code> &mdash; DisplayAffinity 隐藏窗口</strong>
+        <p>
+          部分窗口通过 DisplayAffinity 路径不参与截屏：
+          <code>SetWindowDisplayAffinity</code> 或
+          <code>win32kfull!ChangeWindowTreeProtection</code>。
+          <code>!hidden_windows</code> 检测该类行为。
+        </p>
+        <p>
+          检测需先执行一次 <code>-init</code>。
+          之后无参数运行 <code>!hidden_windows</code> 即可扫描；
+          <code>-init</code> 前无参数运行可查看用法。
+        </p>
+        <p>
+          <code>!hidden_windows_sim</code> 隐藏 Hawkeye 主窗口以演示同类行为。
+          <code>-enable:1</code> 对截屏隐藏；<code>-enable:0</code> 恢复显示。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-hidden-windows-usage.png" alt="Hawkeye Lab: !hidden_windows and !hidden_windows_sim usage in the console.">
+          <figcaption>图 10. 用法&mdash;&mdash;<code>-init</code> 后检测；sim 隐藏 Hawkeye 主窗口。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="hidden-visuals">
+        <strong>11. <code>!hidden_visuals</code> &mdash; 对截屏隐藏的 Visual</strong>
+        <p>
+          隐藏窗口（DisplayAffinity）是一种手法；隐藏 Visual 是另一种：
+          在进程内或跨进程融合 Visual、使其不参与截屏，并可绑定到任意进程窗口。
+        </p>
+        <p>
+          <code>!hidden_visuals</code> 检测对截屏隐藏的 Visual。
+          需要 <code>dwmcore.dll</code> 符号；缺失时控制台会给出 <code>!sym</code> 提示行。
+        </p>
+        <p>
+          <code>!hidden_visuals_sim</code> 在本地创建 Visual（红色 overlay）并隐藏于截屏。
+          <code>-enable:1</code> staging；<code>-enable:0</code> 恢复。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-hidden-visuals-usage.png" alt="Hawkeye Lab: !hidden_visuals and !hidden_visuals_sim in the console.">
+          <figcaption>图 11. 用法&mdash;&mdash;按提示加载 <code>dwmcore</code> 符号；sim 用 <code>-enable:1</code> / <code>-enable:0</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="ukexec">
+        <strong>12. <code>!ukexec</code> &mdash; 内核区域内的用户可访问页</strong>
+        <p>
+          经典注入位于用户态映射；较新手法在目标进程地址空间的<strong>内核区域</strong>
+          放置仍可从用户态触达的可执行代码，常规用户态注入检测往往覆盖不到。
+          <code>!ukexec</code> 扫描此类页。
+        </p>
+        <p>
+          <code>-pid</code> 扫描单进程；<code>-busy</code> 扫描繁忙进程（采集时 CPU 更高）。
+          二者择一，勿同时使用。
+        </p>
+        <p>
+          <code>!ukexec_sim</code> 为用户态 PID（非 4）在该内核区域植入一页用户可访问内存。
+          同时仅一个 sim；结束用 <code>-stop</code> 或随进程退出。
+          无参数可查看用法。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-ukexec-usage.png" alt="Hawkeye Lab: !ukexec and !ukexec_sim usage in the console.">
+          <figcaption>图 12. 用法&mdash;&mdash;<code>-busy</code> 或 <code>-pid</code>；sim 需用户态 PID。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="hidden-process">
+        <strong>13. <code>!hidden_process</code> &mdash; 隐藏进程与线程</strong>
+        <p>
+          注入合法进程的恶意软件常在该进程内起线程，再隐藏进程或线程，使其不出现在常规列表中。
+          <code>!hidden_process</code> 对比「实际在跑」与「系统报告」以发现此类情况。
+        </p>
+        <p>
+          全系统扫描；<code>-run</code> 启动。无参数查看用法。本命令无 sim。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-hidden-process-usage.png" alt="Hawkeye Lab: !hidden_process usage in the console.">
+          <figcaption>图 13. 用法&mdash;&mdash;<code>!hidden_process -run</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="invlpg">
+        <strong>14. INVLPG / 特殊指令</strong>
+        <p>
+          许多现代恶意软件不仅通过常见跨进程 API，还通过 PTE 重映射配合
+          <code>INVLPG</code> 触及他进程内存，因此对<strong>实际执行过</strong>的页做指令识别更加重要。
+        </p>
+        <p>
+          Hawkeye 将活跃内存与 ETW RIP 样本解码为指令报告：统计
+          <code>invlpg</code>、虚拟化 opcode、控制寄存器访问、MSR 等类别，
+          并在模式突出时给出 risk 行。
+          与 <code>!active_pages</code> 配合找热页，与
+          <a href="../../#etw"><code>!etw</code></a> 配合看短窗口内 CPU 执行位置，
+          可快速从大地址空间收窄到少量高风险代码页。
+        </p>
+        <p>
+          Lab 可 staging 填满合成高风险指令的内核页。
+          运行 <code>!active_pages_sim -run -pid:4</code>，
+          再用 <code>!active_pages -pid:4 -rx:0</code> 检测。
+          在 Memory 查看器中打开该页&mdash;&mdash;
+          <a href="../../#memory">Community 内存</a> 介绍
+          <strong>ReadMemory</strong> 与控制台统计行。
+          Lab 亦可在读取后对指定 VA 十六进制编辑，便于手工修补测试数据。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-invlpg-report.png" alt="Hawkeye Lab: instruction decode report on a simulated high-risk kernel page with INVLPG flagged HIGH.">
+          <figcaption>图 14. Staging 的内核代码页&mdash;&mdash;指令解码对 <code>invlpg</code> 标注 <code>[risk] HIGH</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+      <article class="guide-step" id="analyze">
+        <strong>15. <code>!analyze</code> &mdash; 自动化检测与报告</strong>
+        <p>
+          <code>!analyze</code> 根据你提供的线索运行自动化检测并写出分析报告。
+          须先提供线索：按合约编写插件，或自行指定目标 PID 与敏感地址。
+        </p>
+        <p>
+          内置示例以记事本及进程内固定地址为目标与线索，再执行仿真与检测。
+          该示例流程展示 Hawkeye 能力与边界，并非真实事件。
+        </p>
+        <p>
+          <code>-demo</code> 模式下 Hawkeye 主动 staging 敏感行为再检测；
+          <code>-live</code> 模式不仿真，仅基于所给线索检测&mdash;&mdash;适用于真实工作。
+          PDF 中各维度来自行为特征库&mdash;&mdash;检测项本身及解释发现的 Assessment。
+        </p>
+        <p>
+          默认插件：<code>plugins\HawkHotTargets.dll</code>（demo 与 live）。
+          自研 DLL：<code>!analyze -plugin:plugins\MyGame.dll -load</code>，
+          须导出 <code>HawkHotTargetsQuery</code>。
+          见
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community/tree/main/samples/HawkHotTargets"><code>samples\HawkHotTargets</code></a>。
+          控制台无参数运行 <code>!analyze</code> 查看完整用法。
+        </p>
+        <figure class="figure">
+          <img src="../../guide/lab-analyze-usage.png" alt="Hawkeye Lab: !analyze usage in the console.">
+          <figcaption>图 15. 用法&mdash;&mdash;无参数运行 <code>!analyze</code>。</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
+    </section>
+
+    <footer>
+      支持： <a href="mailto:hawkeye18485@gmail.com">hawkeye18485@gmail.com</a>
+      · <a href="../../privacy/">隐私政策</a>
+      · <a href="../../terms/">服务条款</a>
+    </footer>
+  </main>
+</body>
+</html>
