@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 3: Complex main &amp; sub chains — Hawkeye Research</title>
+  <meta name="description" content="ROP Part 3: draw-test, main/sub chains, loops, IF branches, GetDC, NtGdi, private stacks, game-security capability boundaries.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/rop/03-complexity-and-game-security-boundary/">
+  <link rel="stylesheet" href="../../../site.css?v=20261022">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <header class="article-hero rop-hero">
+      <p class="kicker"><a href="../../">Research</a> · <a href="../">ROP</a></p>
+      <p class="rop-series-badge">Part 3 of 4</p>
+      <h2>Return-Oriented Programming (ROP)</h2>
+      <p class="lead">Exploring technical boundaries related to game security<span class="rop-lead-part" title="Part 3 of the series">3</span></p>
+    </header>
+
+    <nav class="guide-nav guide-nav--rop-series" aria-label="Series">
+      <strong class="guide-nav-title">Series</strong>
+      <ol class="series-toc">
+        <li>
+          <span class="num">01</span>
+          <span class="label"><a href="../01-gadgets-stack-and-rop-basics/index.html">What ROP is — principles and first look</a></span>
+        </li>
+        <li>
+          <span class="num">02</span>
+          <span class="label"><a href="../02-messagebox-and-safe-exit/">MessageBox via ROP &amp; clean exit</a></span>
+        </li>
+        <li class="is-current">
+          <span class="num">03</span>
+          <span class="label">Deeper dive — ROP limits in game security</span>
+          <span class="tag">This article</span>
+        </li>
+        <li class="is-upcoming">
+          <span class="num">04</span>
+          <span class="label">Anti-cheat thinking &amp; detection</span>
+          <span class="tag tag--planned">Planned</span>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="rop-article">
+
+    <article class="guide-step guide-step--rop">
+      <div class="rop-part-intro">
+        <p class="rop-series-prev">
+          Previously:
+          <a href="https://hawkeye-leo.github.io/hawkeye/research/rop/02-messagebox-and-safe-exit/">Part 2 — MessageBox via ROP &amp; clean exit</a>
+        </p>
+        <p class="rop-intro-lead">Part 2 closed the smallest useful loop: show a message box and exit cleanly.</p>
+        <p class="rop-intro-lead">
+          Here we stress-test <strong>draw-test</strong>: a ROP program with <strong>loops</strong> and <strong>branches</strong> that draws from cursor input—
+          roughly the same control-flow ideas as normal code (<strong>conditionals, loops, jumps</strong>), which is where people often argue about ROP’s
+          “capability boundary” in game-security contexts.
+        </p>
+        <p class="rop-effect-lead">Pseudocode (Fig.&nbsp;1):</p>
+        <figure class="figure rop-figure">
+          <img src="images/1.png" alt="Fig. 1 Draw and getDrawMode pseudocode" loading="lazy">
+          <figcaption>Fig. 1 · Draw / getDrawMode pseudocode</figcaption>
+        </figure>
+        <p class="rop-effect-lead">Runtime (Fig.&nbsp;2):</p>
+        <figure class="figure rop-figure rop-figure--effect">
+          <img src="images/2.png" alt="Fig. 2 draw-test runtime" loading="lazy">
+          <figcaption>Fig. 2 · Runtime result</figcaption>
+        </figure>
+      </div>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>1. Overall layout</strong>
+      <p>
+        The pseudocode splits into <strong>two ROP chains</strong>: a <strong>main chain</strong> for <strong>Draw</strong>, and a <strong>sub-chain</strong> to get
+        <strong>drawMode</strong>. You also need <strong>branching</strong> (pixel vs line) and a <strong>loop</strong> (thread keeps running—similar to persistent cheat logic).
+        Toggle pixel vs line in the demo source (Fig.&nbsp;3):
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/3.png" alt="Fig. 3 drawMode toggle in source" loading="lazy">
+        <figcaption>Fig. 3 · Source: drawMode (pixel / line)</figcaption>
+      </figure>
+      <p class="rop-sublead">Main block and sub block (Fig.&nbsp;4):</p>
+      <figure class="figure rop-figure">
+        <img src="images/4.png" alt="Fig. 4 MainRopBlock and SubRopBlock" loading="lazy">
+        <figcaption>Fig. 4 · MainRopBlock / SubRopBlock layout</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>MainRopBlock</strong>: Same habit as Part 2—<strong>ROP chain</strong> and <strong>data region</strong> are separate. The data area holds slots for
+          <strong>hDC</strong>, cursor coordinates, <strong>Sleep</strong> interval, <strong>drawMode</strong>, etc., for gadgets to read/write later.
+        </li>
+        <li>
+          <strong>SubRopBlock</strong>: Holds the get <strong>drawMode</strong> slice from the pseudocode in its own remote allocation—again
+          <strong>chain + data</strong>, isolated from the main block so pivoting <strong>RSP</strong> does not stomp the other region.
+        </li>
+      </ul>
+      <p class="rop-sublead">Five private 8&nbsp;KB stacks (Fig.&nbsp;5):</p>
+      <figure class="figure rop-figure">
+        <img src="images/5.png" alt="Fig. 5 five API stacks" loading="lazy">
+        <figcaption>Fig. 5 · Five stack regions and return slots</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Private stacks (Part 2 pattern)</strong>: Before each API call, pivot to a <strong>dedicated 8&nbsp;KB stack</strong> with a
+          <strong>return-to-main-chain</strong> slot; five calls → five regions in Fig.&nbsp;5.
+        </li>
+        <li>
+          <strong>API choice</strong>: Win32 wrappers like <strong>SetPixel</strong>, <strong>LineTo</strong>, <strong>Sleep</strong> touch
+          <strong>shadow space</strong> and can corrupt ROP layout; the demo uses <strong>NtGdiSetPixel</strong>, <strong>NtGdiLineTo</strong>,
+          <strong>NtDelayExecution</strong> for cleaner stacks.
+        </li>
+      </ul>
+      <p class="rop-callout">
+        <strong>Extra:</strong> Part 2 introduced shadow space; <strong>IDA</strong> makes it easy to spot and avoid.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>2. Main chain — GetDC (hDC into data)</strong>
+      <p>
+        Fig.&nbsp;6: main-chain gadgets call <strong>GetDC</strong>; <strong>hDC</strong> is stored in the <strong>MainRopBlock</strong> data region for later loads.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/6.png" alt="Fig. 6 GetDC" loading="lazy">
+        <figcaption>Fig. 6 · GetDC and hDC in data region</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>3. Main chain — GetCursorPos</strong>
+      <p>
+        Fig.&nbsp;7: selected gadgets call <strong>GetCursorPos</strong>. This is the <strong>loop anchor (A_Pin)</strong>.
+        At the end of the main chain, <strong>RSP</strong> pivots back here (Figs.&nbsp;7–8 implement the <strong>loop</strong>).
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/7.png" alt="Fig. 7 GetCursorPos A_Pin" loading="lazy">
+        <figcaption>Fig. 7 · Loop anchor A_Pin</figcaption>
+      </figure>
+      <figure class="figure rop-figure">
+        <img src="images/8.png" alt="Fig. 8 pivot RSP back to A_Pin" loading="lazy">
+        <figcaption>Fig. 8 · Chain tail pivots RSP to A_Pin</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>4. Main chain — argument setup</strong>
+      <figure class="figure rop-figure">
+        <img src="images/9.png" alt="Fig. 9 load rcx through r9 from data" loading="lazy">
+        <figcaption>Fig. 9 · Load data region into rcx–r9</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Arguments ready</strong>: <strong>NtGdiSetPixel</strong> and <strong>NtGdiLineTo</strong> share the same calling convention; Fig.&nbsp;9 fills
+          <strong>rcx, rdx, r8, r9</strong>.
+        </li>
+        <li>
+          <strong>From data</strong>: Earlier steps (<strong>GetDC</strong>, <strong>GetCursorPos</strong>, …) wrote <strong>hDC</strong>, coordinates, etc. into
+          <strong>MainRopBlock</strong>; these gadgets perform <strong>memory → register</strong> loads.
+        </li>
+      </ul>
+      <p class="rop-callout">
+        <strong>Reminder:</strong> After <strong>rcx–r9</strong> are set, try not to clobber them; drawing still needs these values. If a step must reuse them, save and restore first.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>5. Main chain — enter the sub-chain</strong>
+      <p>
+        All four argument registers are ready on the main chain; next, <strong>drawMode</strong> chooses pixel vs line—the logic from Fig.&nbsp;1 (get
+        <strong>drawMode</strong>). Pivot <strong>RSP</strong> into <strong>SubRopBlock</strong> for that decision (Fig.&nbsp;10).
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/10.png" alt="Fig. 10 main chain enters sub-chain" loading="lazy">
+        <figcaption>Fig. 10 · Pivot RSP into sub-chain</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Control flow = RSP</strong>: ROP rarely tells a “call in, ret back” story—<strong>point RSP at another chain slice and the next gadgets run there</strong>.
+          Fig.&nbsp;10 is the main chain aiming <strong>RSP</strong> at <strong>SubRopBlock</strong>.
+        </li>
+        <li>
+          <strong>Main ↔ sub</strong>: After get <strong>drawMode</strong>, the sub-chain pivots <strong>RSP</strong> back to the main chain for pixel or line drawing—unusual in normal code, routine in multi-chain ROP.
+        </li>
+        <li>
+          <strong>Context on hops</strong>: With main and sub chains, <strong>RSP hops</strong> are normal; gadgets on the next chain may overwrite <strong>rcx–r9</strong> from §4—stay clear-headed and <strong>save when needed</strong>.
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>6. Sub-chain — save context</strong>
+      <p>
+        Right after entering the sub-chain, apply “save when needed”—Fig.&nbsp;11: at the head of <strong>ropSubChain</strong>, gadgets store
+        <strong>rcx</strong> in <code>save_rcx_store</code> and <strong>rdx</strong> in <code>save_rdx_store</code> (two slots in
+        <strong>SubRopBlock</strong> data; demo: <strong>subDataBase+0x00</strong> / <strong>+0x08</strong>).
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/11.png" alt="Fig. 11 save rcx rdx" loading="lazy">
+        <figcaption>Fig. 11 · Save register context</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Save rcx, rdx</strong>: §4 already loaded <strong>hDC</strong>, coordinates, etc.—the first two args for <strong>NtGdiSetPixel</strong> /
+          <strong>NtGdiLineTo</strong>. get <strong>drawMode</strong> and <strong>IF</strong> logic reuse <strong>rcx/rdx</strong> and would overwrite them; write
+          <code>save_rcx_store</code> / <code>save_rdx_store</code> first, restore after the branch.
+        </li>
+        <li>
+          <strong>Skip r8, r9</strong>: Third/fourth args (e.g. color) stay in <strong>r8/r9</strong>; <strong>ropSubChain</strong> does not modify them—still valid for <strong>NtGdi*</strong> after return.
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>7. Sub-chain — read drawMode + IF branch</strong>
+      <p>
+        After get <strong>drawMode</strong>, the Fig.&nbsp;12 selection is <strong>IF</strong> logic on <strong>ropSubChain</strong>—branch between pixel and line ROP paths
+        (<strong>LineTo</strong> path in Fig.&nbsp;13).
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/12.png" alt="Fig. 12 IF branch gadgets" loading="lazy">
+        <figcaption>Fig. 12 · test / cmovz / jmp rax</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Branch = RSP change</strong>: No plain <code>if/else</code>—prepare two “stack skip” gadgets (<code>add rsp, N; ret</code>), use
+          <strong>IF</strong> to pick one, <strong>jmp rax</strong> to run it—still <strong>changing where RSP points</strong> on the chain.
+        </li>
+        <li>
+          <strong>Two skips</strong>: <strong>rax</strong> ← <code>add rsp, 8h; ret</code> (<strong>drawMode</strong> ≠ 0, pixel path);
+          <strong>rdx</strong> ← <code>add rsp, 58h; ret</code> (<strong>drawMode</strong> == 0, <strong>LineTo</strong>, lands at index <strong>[26]</strong>).
+        </li>
+        <li>
+          <strong>Key gadget</strong>: <code>test ecx, ecx; cmovz rax, rdx; ret</code> tests <strong>ecx</strong> (<strong>drawMode</strong>); if zero,
+          <strong>cmovz</strong> picks the <strong>58h</strong> path via <strong>rdx → rax</strong>.
+        </li>
+        <li>
+          <strong>Take the jump</strong>: Index <strong>[14]</strong> <strong>jmp rax</strong> runs the chosen gadget; <strong>RSP</strong> skips
+          <strong>58h</strong> to index <strong>[26]</strong> (matches Fig.&nbsp;13 highlight).
+        </li>
+        <li>
+          <strong>LineTo tail (Fig.&nbsp;13)</strong>: <strong>[26]–[33]</strong> restore <strong>rcx/rdx</strong> from <code>save_rcx_store</code> /
+          <code>save_rdx_store</code>; <strong>[34]–[35]</strong> <strong>pop rsp</strong> to main-chain <strong>mainRop_lineToPin</strong>
+          (<strong>mainRopChain[35]</strong>) for §8.
+        </li>
+      </ul>
+      <figure class="figure rop-figure">
+        <img src="images/13.png" alt="Fig. 13 LineTo branch" loading="lazy">
+        <figcaption>Fig. 13 · LineTo branch stack layout</figcaption>
+      </figure>
+      <p class="rop-callout">
+        <strong>Exercise:</strong> The pixel path is the other branch—study <a href="https://github.com/hawkeye-Leo/hawkeye-rop/tree/main/Demo/draw-test" rel="noopener noreferrer">Demo/draw-test</a> on your own.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>8. Main chain — mainRop_lineToPin landing</strong>
+      <p>
+        When <strong>drawMode == 0</strong>, the sub-chain uses <strong>[34]–[35]</strong> to land <strong>RSP</strong> on
+        <strong>mainRop_lineToPin</strong> (<strong>mainRopChain[35]</strong>). Fig.&nbsp;14 is the <strong>LineTo</strong> entry on the main chain:
+        <strong>[35]</strong> pivots to the LineTo private stack; <strong>[36]</strong> calls <strong>NtGdiLineTo</strong> (stack frame layout as in earlier tutorials).
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/14.png" alt="Fig. 14 NtGdiLineTo" loading="lazy">
+        <figcaption>Fig. 14 · mainRop_lineToPin and LineTo stack</figcaption>
+      </figure>
+      <p>
+        <strong>rcx–r9</strong> were prepared in §4; the sub-chain restored <strong>rcx/rdx</strong> from <code>save_*_store</code>—here it is only
+        <strong>pivot + API</strong>, same pattern as Part 2 MessageBox, so we do not step through every gadget.
+        Both paths rejoin at <strong>A_pos3</strong> (<strong>mainRopChain[37]</strong>) for §9 <strong>Sleep</strong> and the loop.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>9. Main chain — Sleep</strong>
+      <p>
+        After pixel/line paths meet at <strong>A_pos3</strong> (<strong>mainRopChain[37]</strong>), Fig.&nbsp;15 <strong>throttles</strong> and
+        <strong>closes the loop</strong>: ~500&nbsp;ms <strong>Sleep</strong> (demo: <strong>NtDelayExecution</strong>), then pivot <strong>RSP</strong> back to
+        <strong>A_Pin</strong> from §3 (chain index <strong>[7]</strong>).
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/15.png" alt="Fig. 15 Sleep and loop" loading="lazy">
+        <figcaption>Fig. 15 · NtDelayExecution and return to A_Pin ([7])</figcaption>
+      </figure>
+      <p><strong>Notes:</strong></p>
+      <ul class="rop-point-list">
+        <li>
+          <strong>A_pos3 ([37]–[42])</strong>: <strong>rcx</strong> = 0 (non-alertable), <strong>rdx</strong> → delay in data (demo:
+          <strong>−500&nbsp;ms</strong>); <strong>pop rsp</strong> to <strong>Delay</strong> private stack, <strong>NtDelayExecution</strong>, return
+          <strong>A_pos4</strong> (<strong>[43]</strong>).
+        </li>
+        <li>
+          <strong>Close loop ([43]–[44])</strong>: Another <strong>pop rsp</strong> loads <strong>A_Pin</strong>; execution continues at index
+          <strong>[7]</strong>—<strong>GetCursorPos</strong> again, matching Figs.&nbsp;7–8 for the next Draw round.
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Closing Q&amp;A</strong>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Can ROP build complex game cheats?</strong> Yes—but you maintain a whole “ROP kingdom”, often many <strong>sub-chains</strong> (<strong>draw-test</strong> is the high-complexity example).
+        </li>
+        <li>
+          <strong>Is it a good everyday dev choice?</strong> <strong>Mixed</strong>: painful to debug, real downsides; defenders who do not understand ROP may still struggle short term.
+        </li>
+        <li>
+          <strong>How long will ROP stay practical?</strong> <strong>CET</strong> is the long-term counterweight, but rollout depends on the ecosystem; it will not vanish overnight.
+        </li>
+        <li>
+          <strong>Missing gadgets?</strong> Common. We use <code>test ecx, ecx; cmovz rax, rdx; ret</code> instead of
+          <code>add rsp, rax; ret</code> for that reason; in authorized research you may place tiny stubs in target <strong>RWX</strong> (do not abuse).
+        </li>
+        <li>
+          <strong>Where to hunt gadgets?</strong> Red teams often use <strong>system modules</strong>; game-focused work often prefers <strong>game modules</strong>—version-aligned, large, higher hit rate.
+        </li>
+        <li>
+          <strong>ROP cheats in the wild?</strong> <strong>Yes</strong>, rarely discussed openly.
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop rop-part-summary">
+      <strong>Summary</strong>
+      <ul class="rop-point-list">
+        <li>
+          <strong>Main + sub</strong> blocks, <strong>GetDC / GetCursorPos / NtGdi* / Sleep</strong>, and <strong>five 8&nbsp;KB private stacks</strong> implement
+          <strong>loop (A_Pin)</strong>, <strong>main/sub pivots</strong>, and <strong>IF (cmovz + jmp rax → RSP)</strong>.
+        </li>
+        <li><strong>Change RSP = change control flow</strong>; multi-chain hops are normal—save context when needed.</li>
+        <li>
+          <strong>Continued from Part 2</strong>: Win32 APIs with <strong>shadow space</strong> can break chain layout—<strong>NT syscalls</strong> are often a better fit;
+          if gadgets are missing, authorized research may use <strong>RWX</strong> stubs in the target process.
+        </li>
+        <li>Capability boundary: ROP <strong>can</strong> express rich logic, but <strong>engineering cost and hard limits</strong> are real.</li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop" id="opensource">
+      <strong>Open source</strong>
+      <p>Related Hawkeye repositories:</p>
+      <p>
+        Demo for this article:
+        <a href="https://github.com/hawkeye-Leo/hawkeye-rop/tree/main/Demo/draw-test">Demo/draw-test</a>
+      </p>
+      <ul class="article-list">
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-rop">github.com/hawkeye-Leo/hawkeye-rop</a>
+          — Hawkeye ROP (gadget finder)
+          · <a href="https://github.com/hawkeye-Leo/hawkeye-rop/releases">Releases</a>
+        </li>
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a>
+          — Hawkeye Community
+        </li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop guide-step--next">
+      <strong>Next part</strong>
+      <p>Anti-cheat thinking &amp; detection.</p>
+    </article>
+
+    <p class="article-nav article-nav--rop">
+      <a href="https://hawkeye-leo.github.io/hawkeye/research/rop/02-messagebox-and-safe-exit/">&larr; Part 2</a>
+      · <a href="../">ROP series</a>
+    </p>
+
+    </div>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>
