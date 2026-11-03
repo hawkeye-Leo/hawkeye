@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Part 4: Anti-cheat detection &amp; countermeasure thinking — Hawkeye Research</title>
+  <meta name="description" content="ROP Part 4: gadget and chain detection, performance and false positives, VAD/PTE/EPT evasion, Lab !rop closure, Hawkeye Lab.">
+  <link rel="canonical" href="https://hawkeye-leo.github.io/hawkeye/research/rop/04-anti-cheat-detection-and-countermeasures/">
+  <link rel="stylesheet" href="../../../site.css?v=20261022">
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path fill="currentColor" fill-rule="evenodd" d="M5.5 16 L13 7 L27 16 L13 25 Z M11.5 16 L14.8 12.8 L20 16 L14.8 19.2 Z"/>
+        </svg>
+        <h1 class="brand-title">Hawkeye <span class="brand-tagline">Research</span></h1>
+      </div>
+      <nav class="tabs" aria-label="Site">
+        <a href="../../../">Community</a>
+        <a href="../../../lab/">Lab</a>
+        <a class="active" href="../../">Research</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <header class="article-hero rop-hero">
+      <p class="kicker"><a href="../../">Research</a> · <a href="../">ROP</a></p>
+      <p class="rop-series-badge">Part 4 of 4</p>
+      <h2>Return-Oriented Programming (ROP)</h2>
+      <p class="lead">Exploring technical boundaries related to game security<span class="rop-lead-part" title="Part 4 of the series">4</span></p>
+    </header>
+
+    <nav class="guide-nav guide-nav--rop-series" aria-label="Series">
+      <strong class="guide-nav-title">Series</strong>
+      <ol class="series-toc">
+        <li>
+          <span class="num">01</span>
+          <span class="label"><a href="../01-gadgets-stack-and-rop-basics/">What ROP is — principles and first look</a></span>
+        </li>
+        <li>
+          <span class="num">02</span>
+          <span class="label"><a href="../02-messagebox-and-safe-exit/">MessageBox via ROP &amp; clean exit</a></span>
+        </li>
+        <li>
+          <span class="num">03</span>
+          <span class="label"><a href="../03-complexity-and-game-security-boundary/">Deeper dive — ROP limits in game security</a></span>
+        </li>
+        <li class="is-current">
+          <span class="num">04</span>
+          <span class="label">Anti-cheat thinking &amp; detection</span>
+          <span class="tag">This article</span>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="rop-article">
+
+    <article class="guide-step guide-step--rop">
+      <div class="rop-part-intro">
+        <p class="rop-series-prev">
+          Previously:
+          <a href="https://hawkeye-leo.github.io/hawkeye/research/rop/03-complexity-and-game-security-boundary/">Part 3 — Deeper dive: ROP capability boundaries in game security</a>
+        </p>
+        <p class="rop-intro-lead">In this part we look at game anti-cheat: how to detect injection cheats built with ROP.</p>
+        <p class="rop-intro-lead">
+          Earlier articles showed how strong ROP can be—it sidesteps conventional signature scanning. The flip side is the
+          hard weakness: <strong>gadgets stand out in memory</strong>.
+        </p>
+      </div>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Chain layout &amp; gadgets (Figs.&nbsp;1–3)</strong>
+      <figure class="figure rop-figure">
+        <img src="images/1.png" alt="Fig. 1 Main ROP chain stack layout" loading="lazy">
+        <figcaption>Fig. 1 · Main ROP chain stack layout</figcaption>
+      </figure>
+      <figure class="figure rop-figure">
+        <img src="images/2.png" alt="Fig. 2 Sub-chain ROP stack layout" loading="lazy">
+        <figcaption>Fig. 2 · Sub-chain ROP stack layout</figcaption>
+      </figure>
+      <figure class="figure rop-figure">
+        <img src="images/3.png" alt="Fig. 3 One example gadget" loading="lazy">
+        <figcaption>Fig. 3 · One example gadget</figcaption>
+      </figure>
+      <p>Figs.&nbsp;1–3 make the following easy to see:</p>
+      <ul class="rop-point-list">
+        <li><strong>Gadget shapes are obvious</strong>—often something like <strong>X; ret</strong></li>
+        <li><strong>ROP chains contain many gadgets</strong></li>
+        <li><strong>In this series&rsquo; demos, chains and gadgets live mainly on the heap</strong></li>
+      </ul>
+      <p>From an anti-cheat engineer&rsquo;s perspective, detection can lean on those traits.</p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <p class="rop-effect-lead">
+        We first cover <strong>engineering on the detection side</strong> (performance, false positives), then walk through
+        <strong>common evasion ideas</strong> and whether they hold up: VAD tricks, page tables, kernel-hidden pages, in-chain padding, and more.
+      </p>
+      <ul class="rop-point-list">
+        <li><strong>I</strong> · Performance &amp; false positives</li>
+        <li><strong>II–V</strong> · Common evasion</li>
+        <li><strong>Extra</strong> · In-chain padding</li>
+        <li><strong>VI</strong> · Lab closure</li>
+        <li><strong>VII</strong> · Can you still hide and pass detection? (open discussion)</li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>I. Performance &amp; false positives</strong>
+      <p>
+        <strong>Performance</strong> matters too. In games, scans that eat too much time or too many resources are unacceptable;
+        teams usually mitigate with strategies such as <strong>deferred scans</strong>, <strong>once-per-match checks</strong>, and
+        <strong>batched scanning</strong>.
+      </p>
+      <p>
+        <strong>False positives</strong>: <strong>manageable.</strong> ROP cheats are still injection-class; even a chain with modest logic like our
+        series demos often has on the order of <strong>dozens</strong> of gadgets. Shapes are distinctive, so detectors can require
+        <strong>gadget counts</strong> plus constraints like <strong>chain confidence and spacing</strong> before reporting—filtering a lot of
+        accidental chain-like layouts and keeping false positives within practical bounds.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>II. VAD spoofing: PAGE_NOACCESS—reliable bypass?</strong>
+      <p>
+        <strong>Answer:</strong> <strong>Hard to treat as a reliable bypass.</strong> Some mark chain regions in the VAD as
+        <code>PAGE_NOACCESS</code>, hoping anti-cheat that relies on <span class="rop-tight-inline">VirtualQuery (<code>ZwQueryVirtualMemory</code>)</span>
+        will see &ldquo;not readable&rdquo; and skip the region. The idea is sound, but mature detection is
+        <strong>multi-layered</strong>. When VAD labels disagree with real PTE state, that mismatch is already a high-risk signal.
+        <strong>Covering one lie with another is a bad trade.</strong>
+      </p>
+      <p class="rop-callout">
+        <strong>Note:</strong> In samples our team has captured, a fair number of authors still try this approach.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>III. Can VT-EPT protect the chain?</strong>
+      <p>
+        <strong>Answer:</strong> From what I&rsquo;ve seen, <strong>no</strong>. EPT split views usually target
+        <strong>executable pages</strong> (read vs execute). Scanning ROP chains is fundamentally <strong>read</strong>-based, and chain pages
+        <strong>need not be executable</strong>—so EPT is a poor fit for hiding them. VT-style cheats more often fail because
+        <strong>strings and other static artifacts</strong> in the <strong>kernel heap</strong> were not cleaned up.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>IV. Hand-built PTEs wired into the game process page tables?</strong>
+      <p>
+        <strong>Answer:</strong> <strong>Hard to treat as a reliable bypass.</strong> Capable anti-cheat does not stop at
+        <strong>ZwQueryVirtualMemory</strong> enumeration (a weak baseline). Walking the <strong>four-level page tables</strong> for the game process
+        is routine; if a page exists objectively but never shows up in VAD enumeration, that alone is suspicious. Not many cheat authors
+        bother with this—likely because the effort rarely pays off.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>V. Kernel pages mapped for user-mode access to hide the chain?</strong>
+      <p>
+        <strong>Answer:</strong> <strong>Don&rsquo;t expect stable evasion, but people try.</strong> Allocating kernel-backed pages that user mode
+        can reach to stash a chain sees only sporadic use; anti-cheat teams may not prioritize it until they have a sample—then a targeted
+        rule can ship in a hotfix. Same lesson: <strong>don&rsquo;t cover one lie with another</strong>—&ldquo;fancy&rdquo; tricks can become
+        strong signatures, and the trap may already be set.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>Extra: obfuscation &amp; in-chain padding</strong>
+      <p>
+        <strong>Shellcode</strong> can insert junk or NOP-like bytes so byte signatures anti-cheat relied on stop matching—for a while.
+      </p>
+      <p>
+        <strong>ROP</strong> can pad the chain with <strong>dummy data</strong> or <strong>garbage addresses</strong>; at runtime,
+        <strong>RSP pivots</strong> (or equivalent stack-jump gadgets) <strong>skip</strong> those slots so the real chain still runs.
+      </p>
+      <p>
+        That is an <strong>endless arms race</strong>—detectors tighten <strong>gadget shape, chain confidence, spacing/density</strong>; evaders add
+        padding. There is no permanent &ldquo;hide forever.&rdquo;
+      </p>
+      <p class="rop-series-prev">
+        Part 3&rsquo;s draw-test dual ROP chains can be checked in Hawkeye Lab with <code>!rop</code>; see <strong>VI</strong>.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>VI. Final closure</strong>
+      <p>
+        <a href="https://hawkeye-leo.github.io/hawkeye/lab/">Hawkeye Lab</a> supports detection of ROP-style injection cheats via the console command
+        <code>!rop</code>.
+      </p>
+      <figure class="figure rop-figure">
+        <img src="images/4.png" alt="Fig. 4 Hawkeye Lab !rop console output" loading="lazy">
+        <figcaption>Fig. 4 · Matches Part 3 draw-test dual chains—26 gadgets per segment</figcaption>
+      </figure>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>VII. Any way left to hide and pass detection?</strong>
+      <p>
+        <strong>Answer:</strong> If you have other ideas, share them—GitHub Discussions on the Hawkeye repos or
+        <a href="mailto:hawkeye18485@gmail.com">Support</a>—and help extend this picture.
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop rop-part-summary">
+      <strong>Summary</strong>
+      <ul class="rop-point-list">
+        <li>ROP wins on <strong>evading classic signatures</strong>; it loses on <strong>recognizable gadgets and chains</strong>.</li>
+        <li>Detection surface: <strong>gadget shape</strong> and <strong>how chain-like the layout is</strong>.</li>
+        <li><strong>Performance</strong>: deferred scans, once-per-match checks, batched scanning; <strong>false positives</strong>: gadget-count thresholds plus chain-shape constraints.</li>
+        <li>Four-part arc complete: gadgets &rarr; MessageBox closure &rarr; draw-test complexity &rarr; anti-cheat detection and countermeasure thinking.</li>
+      </ul>
+    </article>
+
+    <article class="guide-step guide-step--rop">
+      <strong>About Hawkeye Lab</strong>
+      <p>
+        Hawkeye builds products around <strong>Windows security</strong>;
+        <a href="https://hawkeye-leo.github.io/hawkeye/lab/">Hawkeye Lab</a> focuses on <strong>game security</strong>, refined through roughly
+        <strong>five years</strong> of real-world opposition.
+      </p>
+      <p>
+        As a professional detection and analysis tool, it shows anti-cheat engineers <strong>behavioral traits</strong> and
+        <strong>techniques</strong> cheats use; it shows cheat testers that shortcuts can backfire—Lab will
+        <strong>evaluate</strong> and <strong>score</strong> a sample so you can compare and improve.
+      </p>
+      <p>
+        Hawkeye Lab installs <strong>no system-wide hooks</strong>, <strong>does not trigger PG (PatchGuard)</strong>, and
+        <strong>does not use VT</strong>; in a typical workflow, one automated detection run often finishes in
+        <strong>a few minutes</strong> (depending on sample and command mix).
+      </p>
+      <p>
+        <strong>Learn &amp; subscribe:</strong>
+        <a href="https://hawkeye-leo.github.io/hawkeye/lab/">Lab overview</a>
+        · <a href="https://hawkeye-leo.github.io/hawkeye/lab/early-access/">Early access</a>
+      </p>
+    </article>
+
+    <article class="guide-step guide-step--rop" id="opensource">
+      <strong>Open source</strong>
+      <p>Series demos and gadget search rely on:</p>
+      <ul class="article-list">
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-rop">github.com/hawkeye-Leo/hawkeye-rop</a>
+          — Hawkeye ROP (gadget search)
+          · <a href="https://github.com/hawkeye-Leo/hawkeye-rop/releases">Releases</a>
+        </li>
+        <li>
+          <a href="https://github.com/hawkeye-Leo/hawkeye-community">github.com/hawkeye-Leo/hawkeye-community</a>
+          — Hawkeye Community (runtime foundation for Lab)
+        </li>
+      </ul>
+    </article>
+
+    <p class="article-nav article-nav--rop">
+      <a href="https://hawkeye-leo.github.io/hawkeye/research/rop/03-complexity-and-game-security-boundary/">&larr; Part 3</a>
+      · <a href="../">ROP series</a>
+    </p>
+
+    </div>
+
+    <footer>
+      <a href="../../../">Community</a>
+      · <a href="../../../lab/">Lab</a>
+      · <a href="mailto:hawkeye18485@gmail.com">Support</a>
+    </footer>
+  </main>
+</body>
+</html>

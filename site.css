@@ -1682,6 +1682,10 @@ footer {
   color: #4a1028;
 }
 
+.rop-article .guide-step--rop .rop-tight-inline {
+  white-space: nowrap;
+}
+
 .rop-article .rop-point-list li::marker {
   color: #8e2452;
   font-weight: 650;
