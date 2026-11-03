@@ -162,6 +162,10 @@
         <p>Detects executable pages in the kernel region of a process address space that remain user-accessible &mdash; a newer injection technique. <code>!ukexec_sim</code> stages a case.</p>
       </article>
       <article class="card">
+        <h3><a href="#rop"><code>!rop</code></a></h3>
+        <p>Injection cheat detection based on ROP (Return-Oriented Programming).</p>
+      </article>
+      <article class="card">
         <h3><a href="#hidden-process"><code>!hidden_process</code></a></h3>
         <p>Detects processes and threads that are running but missing from the lists the system reports. <code>!hidden_process -run</code>.</p>
       </article>
@@ -202,6 +206,7 @@
           <li><a href="#hidden-windows"><code>!hidden_windows</code></a></li>
           <li><a href="#hidden-visuals"><code>!hidden_visuals</code></a></li>
           <li><a href="#ukexec"><code>!ukexec</code></a></li>
+          <li><a href="#rop"><code>!rop</code></a></li>
           <li><a href="#hidden-process"><code>!hidden_process</code></a></li>
           <li><a href="#invlpg">INVLPG / specials</a></li>
           <li><a href="#analyze"><code>!analyze</code></a></li>
@@ -524,8 +529,20 @@
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">&uarr; Contents</a></p>
       </article>
+      <article class="guide-step" id="rop">
+        <strong>13. <code>!rop</code> &mdash; ROP chain detection</strong>
+        <p>
+          Injection cheat detection based on ROP (Return-Oriented Programming).
+          <code>!rop -pid:&lt;pid&gt;</code>
+        </p>
+        <figure class="figure">
+          <img src="../guide/lab-rop-usage.png" alt="Hawkeye Lab: !rop usage and scan output in the console.">
+          <figcaption>Figure 13. See Usage for details.</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">&uarr; Contents</a></p>
+      </article>
       <article class="guide-step" id="hidden-process">
-        <strong>13. <code>!hidden_process</code> &mdash; hidden processes and threads</strong>
+        <strong>14. <code>!hidden_process</code> &mdash; hidden processes and threads</strong>
         <p>
           Malware that injects into a legitimate process often starts a
           thread there, then hides that process or thread so the usual
@@ -540,12 +557,12 @@
         </p>
         <figure class="figure">
           <img src="../guide/lab-hidden-process-usage.png" alt="Hawkeye Lab: !hidden_process usage in the console.">
-          <figcaption>Figure 13. Usage &mdash; <code>!hidden_process -run</code>.</figcaption>
+          <figcaption>Figure 14. Usage &mdash; <code>!hidden_process -run</code>.</figcaption>
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">&uarr; Contents</a></p>
       </article>
       <article class="guide-step" id="invlpg">
-        <strong>14. INVLPG / special instructions</strong>
+        <strong>15. INVLPG / special instructions</strong>
         <p>
           Much modern malware reaches another process's memory through
           PTE remap paired with <code>INVLPG</code>, not only through
@@ -575,12 +592,12 @@
         </p>
         <figure class="figure">
           <img src="../guide/lab-invlpg-report.png" alt="Hawkeye Lab: instruction decode report on a simulated high-risk kernel page with INVLPG flagged HIGH.">
-          <figcaption>Figure 14. A staged kernel code page &mdash; instruction decode with <code>[risk] HIGH</code> on <code>invlpg</code>.</figcaption>
+          <figcaption>Figure 15. A staged kernel code page &mdash; instruction decode with <code>[risk] HIGH</code> on <code>invlpg</code>.</figcaption>
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">&uarr; Contents</a></p>
       </article>
       <article class="guide-step" id="analyze">
-        <strong>15. <code>!analyze</code> &mdash; automated detection and report</strong>
+        <strong>16. <code>!analyze</code> &mdash; automated detection and report</strong>
         <p>
           <code>!analyze</code> runs automated detection and writes an analysis
           report from clues you supply. You must provide those clues first.
@@ -611,7 +628,7 @@
         </p>
         <figure class="figure">
           <img src="../guide/lab-analyze-usage.png" alt="Hawkeye Lab: !analyze usage in the console.">
-          <figcaption>Figure 15. Usage &mdash; run <code>!analyze</code> with no arguments.</figcaption>
+          <figcaption>Figure 16. Usage &mdash; run <code>!analyze</code> with no arguments.</figcaption>
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="Back to contents">&uarr; Contents</a></p>
       </article>

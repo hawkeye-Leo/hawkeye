@@ -172,6 +172,10 @@
         <p class="lab-cmd-card-note"><code>!ukexec_sim</code> 可模拟此异常内存页。</p>
       </article>
       <article class="card">
+        <h3><a href="#rop"><code>!rop</code></a></h3>
+        <p>基于 ROP（Return-Oriented Programming）技术的注入外挂检测</p>
+      </article>
+      <article class="card">
         <h3><a href="#hidden-process"><code>!hidden_process</code></a></h3>
         <p>隐藏线程、进程的检测。</p>
       </article>
@@ -213,6 +217,7 @@
           <li><a href="#hidden-windows"><code>!hidden_windows</code></a></li>
           <li><a href="#hidden-visuals"><code>!hidden_visuals</code></a></li>
           <li><a href="#ukexec"><code>!ukexec</code></a></li>
+          <li><a href="#rop"><code>!rop</code></a></li>
           <li><a href="#hidden-process"><code>!hidden_process</code></a></li>
           <li><a href="#invlpg">INVLPG / 特殊指令</a></li>
           <li><a href="#analyze"><code>!analyze</code></a></li>
@@ -456,29 +461,41 @@
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
       </article>
-      <article class="guide-step" id="hidden-process">
-        <strong>13. <code>!hidden_process</code> &mdash; 隐藏进程与线程</strong>
-        <p>系统中隐藏线程和进程的检测。</p>
+      <article class="guide-step" id="rop">
+        <strong>13. <code>!rop</code> &mdash; ROP 链检测</strong>
+        <p>
+          基于 ROP（Return-Oriented Programming）技术的注入外挂检测。
+          <code>!rop -pid:&lt;pid&gt;</code>
+        </p>
         <figure class="figure">
-          <img src="../../guide/lab-hidden-process-usage.png" alt="Hawkeye Lab: !hidden_process usage in the console.">
+          <img src="../../guide/lab-rop-usage.png" alt="Hawkeye Lab: !rop usage and scan output in the console.">
           <figcaption>图 13. 详情参考 Usage</figcaption>
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
       </article>
+      <article class="guide-step" id="hidden-process">
+        <strong>14. <code>!hidden_process</code> &mdash; 隐藏进程与线程</strong>
+        <p>系统中隐藏线程和进程的检测。</p>
+        <figure class="figure">
+          <img src="../../guide/lab-hidden-process-usage.png" alt="Hawkeye Lab: !hidden_process usage in the console.">
+          <figcaption>图 14. 详情参考 Usage</figcaption>
+        </figure>
+        <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
+      </article>
       <article class="guide-step" id="invlpg">
-        <strong>14. INVLPG / 特殊指令</strong>
+        <strong>15. INVLPG / 特殊指令</strong>
         <p>
           使用 PTE 重映射方案的内存访问已经成为主流。
           Hawkeye Lab 使用活跃页技术、ETW RIP 采集技术配合指令识别技术，可以很方便的识别出外挂代码。
         </p>
         <figure class="figure">
           <img src="../../guide/lab-invlpg-report.png" alt="Hawkeye Lab: instruction decode report on a simulated high-risk kernel page with INVLPG flagged HIGH.">
-          <figcaption>图 14. 详情参考 Usage</figcaption>
+          <figcaption>图 15. 详情参考 Usage</figcaption>
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
       </article>
       <article class="guide-step" id="analyze">
-        <strong>15. <code>!analyze</code> &mdash; 自动化检测与生成专业报告</strong>
+        <strong>16. <code>!analyze</code> &mdash; 自动化检测与生成专业报告</strong>
         <p>
           <code>!analyze</code> 根据你提供的线索运行自动化检测并产出专业分析报告。
           Hawkeye Lab 内置众多仿真模型，目的是提供和验证自身能力边界。
@@ -497,7 +514,7 @@
         </p>
         <figure class="figure">
           <img src="../../guide/lab-analyze-usage.png" alt="Hawkeye Lab: !analyze usage in the console.">
-          <figcaption>图 15. 详情参考 Usage</figcaption>
+          <figcaption>图 16. 详情参考 Usage</figcaption>
         </figure>
         <p class="guide-up"><a href="#guide-toc" aria-label="返回目录">&uarr; 目录</a></p>
       </article>
